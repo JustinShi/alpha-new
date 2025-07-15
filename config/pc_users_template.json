@@ -1,0 +1,75 @@
+[
+  {
+    "username": "user1_pc",
+    "device_type": "pc",
+    "description": "PC端用户示例配置",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Accept": "application/json, text/plain, */*",
+      "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+      "Accept-Encoding": "gzip, deflate, br",
+      "Connection": "keep-alive",
+      "Content-Type": "application/json;charset=UTF-8",
+      "Referer": "https://www.binance.com/",
+      "Origin": "https://www.binance.com",
+      "X-Requested-With": "XMLHttpRequest",
+      "sec-ch-ua": "\"Not_A Brand\";v=\"8\", \"Chromium\";v=\"120\", \"Google Chrome\";v=\"120\"",
+      "sec-ch-ua-mobile": "?0",
+      "sec-ch-ua-platform": "\"Windows\"",
+      "Sec-Fetch-Dest": "empty",
+      "Sec-Fetch-Mode": "cors",
+      "Sec-Fetch-Site": "same-origin"
+    },
+    "cookies": {
+      "session_id": "your_session_id_here",
+      "auth_token": "your_auth_token_here",
+      "user_id": "your_user_id_here",
+      "csrf_token": "your_csrf_token_here",
+      "device_id": "your_device_id_here",
+      "_ga": "GA1.2.1234567890.1234567890",
+      "_gid": "GA1.2.0987654321.0987654321",
+      "timezone": "Asia/Shanghai",
+      "language": "zh-CN",
+      "theme": "light"
+    },
+    "config": {
+      "max_retries": 3,
+      "timeout": 30,
+      "use_proxy": false,
+      "proxy_url": "",
+      "enable_logging": true,
+      "log_level": "INFO"
+    }
+  },
+  {
+    "username": "user2_pc",
+    "device_type": "pc", 
+    "description": "第二个PC端用户配置",
+    "headers": {
+      "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+      "Accept": "application/json, text/plain, */*",
+      "Accept-Language": "zh-CN,zh;q=0.9,en;q=0.8",
+      "Accept-Encoding": "gzip, deflate, br",
+      "Connection": "keep-alive",
+      "Content-Type": "application/json;charset=UTF-8",
+      "Referer": "https://www.binance.com/",
+      "Origin": "https://www.binance.com",
+      "X-Requested-With": "XMLHttpRequest"
+    },
+    "cookies": {
+      "session_id": "your_session_id_here_2",
+      "auth_token": "your_auth_token_here_2",
+      "user_id": "your_user_id_here_2",
+      "csrf_token": "your_csrf_token_here_2",
+      "device_id": "your_device_id_here_2"
+    },
+    "config": {
+      "max_retries": 3,
+      "timeout": 30,
+      "use_proxy": true,
+      "proxy_url": "http://proxy.example.com:8080",
+      "enable_logging": true,
+      "log_level": "DEBUG"
+    }
+  }
+] 

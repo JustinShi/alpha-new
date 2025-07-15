@@ -1,0 +1,135 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ master, main, develop ]
+  pull_request:
+    branches: [ master, main, develop ]
+
+jobs:
+  lint-and-test:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        python-version: ["3.11", "3.12", "3.13"]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache pip dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt', '**/pyproject.toml') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install mypy pytest pytest-asyncio
+
+    - name: Lint with Ruff
+      run: |
+        echo "=== Ruff代码检查 ==="
+        python -m ruff check src/ --output-format=github
+        echo "=== Ruff代码格式检查 ==="
+        python -m ruff format --check src/
+
+    - name: Format check with Black
+      run: |
+        echo "=== Black代码格式检查 ==="
+        python -m black --check --diff src/
+
+    - name: Type check with MyPy
+      run: |
+        echo "=== MyPy类型检查 ==="
+        python -m mypy src/alpha_new/ --config-file=mypy.ini
+
+    - name: Test with pytest
+      run: |
+        echo "=== 运行单元测试 ==="
+        python -m pytest tests/ -v --tb=short
+      env:
+        PYTHONPATH: ${{ github.workspace }}
+
+    - name: Import test
+      run: |
+        echo "=== 测试模块导入 ==="
+        python -c "
+        try:
+            from src.alpha_new.models.alpha_token_model import AlphaTokenInfo
+            from src.alpha_new.api_clients.alpha_token_client import AlphaTokenClient
+            print('✅ 模块导入测试通过')
+        except ImportError as e:
+            print(f'❌ 模块导入失败: {e}')
+            exit(1)
+        "
+
+  security-scan:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.13"
+
+    - name: Install security tools
+      run: |
+        pip install bandit safety
+
+    - name: Run security scan with bandit
+      run: |
+        echo "=== Bandit安全扫描 ==="
+        bandit -r src/ -f json -o bandit-report.json || true
+        bandit -r src/ || true
+
+    - name: Check dependencies for security vulnerabilities
+      run: |
+        echo "=== Safety依赖安全检查 ==="
+        safety check --json || true
+
+  code-quality:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: "3.13"
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+
+    - name: Generate code quality report
+      run: |
+        echo "=== 代码质量统计 ==="
+        echo "## 项目统计"
+        find src/ -name "*.py" | wc -l | xargs echo "Python文件数量:"
+        find src/ -name "*.py" -exec wc -l {} + | tail -1 | awk '{print "总代码行数:", $1}'
+        echo ""
+        echo "## Ruff检查结果"
+        python -m ruff check src/ --statistics || true
+
+    - name: Upload reports
+      uses: actions/upload-artifact@v3
+      with:
+        name: quality-reports
+        path: |
+          bandit-report.json
+        retention-days: 30
+      if: always() 

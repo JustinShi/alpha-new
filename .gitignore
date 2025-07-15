@@ -1,0 +1,74 @@
+# 字节码缓存
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+.venv/
+venv/
+ENV/
+env/
+
+# 用户配置文件（包含敏感信息）
+config/pc_users.json
+config/mobile_users.json
+config/airdrop_config.yaml
+config/app_config.toml
+
+# 运行时数据（包含用户信息）
+data/
+logs/
+*.db
+*.log
+*.sqlite
+*.sqlite3
+
+# 临时文件
+*.tmp
+*.temp
+.cache/
+.pytest_cache/
+
+# IDE和编辑器文件
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 测试覆盖率
+.coverage
+htmlcov/
+
+# mypy类型检查缓存
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Ruff缓存
+.ruff_cache/
+
+# 包管理器缓存
+node_modules/
+package-lock.json

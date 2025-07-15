@@ -1,0 +1,4 @@
+# 代理池示例，每行一个代理地址，支持 http/socks5
+http://127.0.0.1:10808
+
+# http://user:pass@proxy.example.com:8080 
