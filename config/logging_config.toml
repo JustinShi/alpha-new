@@ -1,0 +1,25 @@
+# 日志配置文件
+# 可以通过环境变量 LOG_LEVEL 覆盖全局日志级别
+# 可以通过环境变量 LOG_FILE 指定日志文件
+
+[global]
+# 全局日志级别: DEBUG, INFO, WARNING, ERROR, CRITICAL
+level = "INFO"
+# 日志文件名称（可选）
+file = "alpha_new.log"
+# 是否输出到控制台
+console = true
+
+[modules]
+# 各模块的日志级别配置
+# 如果未指定，则使用全局级别
+alpha_new.api = "INFO"
+alpha_new.db = "DEBUG"
+alpha_new.scripts = "INFO"
+alpha_new.cli = "INFO"
+alpha_new.claim = "INFO"
+
+# 第三方库的日志级别
+httpx = "WARNING"
+asyncio = "WARNING"
+sqlalchemy = "WARNING" 

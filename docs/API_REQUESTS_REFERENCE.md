@@ -311,22 +311,39 @@
   "message": null,
   "data": [
     {
-      "symbol": "ALPHA_261",
-      "name": "MPLX",
-      "fullName": "Multiplex Protocol",
+      "tokenId": "D2CBD14EC0F59E15DE4CD960582A2464",
       "chainId": "56",
+      "chainIconUrl": "https://bin.bnbstatic.com/image/admin_mgs_image_upload/20250228/d0216ce4-a3e9-4bda-8937-4a6aa943ccf2.png",
       "chainName": "BSC",
-      "contractAddress": "0x...",
+      "contractAddress": "0xf39e4b21c84e737df08e2c3b32541d856f508e48",
+      "name": "Yooldo Games",
+      "symbol": "ESPORTS",
+      "iconUrl": "https://bin.bnbstatic.com/images/web3-data/public/token/logos/3261fe7717574f9ab8...png",
+      "price": "0.07988133663780544223",
+      "percentChange24h": "6.20",
+      "volume24h": "15392227.453426329082801080973",
+      "marketCap": "12924800.26799692055281400000",
+      "fdv": "71893202.97402489800700000000",
+      "liquidity": "1193154.8708987476",
+      "totalSupply": "900000000",
+      "circulatingSupply": "161800000",
+      "holders": "938",
       "decimals": 18,
-      "logoUrl": "https://...",
-      "totalSupply": "1000000000",
-      "circulatingSupply": "500000000",
-      "marketCap": 12500000.0,
-      "price": 0.025,
-      "priceChange24h": 5.2,
-      "volume24h": 1250000.0,
-      "isActive": true,
-      "listingTime": 1640995200000
+      "listingCex": false,
+      "hotTag": true,
+      "cexCoinName": "",
+      "canTransfer": false,
+      "denomination": 1,
+      "offline": false,
+      "tradeDecimal": 8,
+      "alphaId": "ALPHA_283",
+      "offsell": false,
+      "priceHigh24h": "0.09627645162770056931",
+      "priceLow24h": "0.0484430693174859344",
+      "onlineTge": false,
+      "onlineAirdrop": true,
+      "score": 4411,
+      "cexOffDisplay": false
     }
   ],
   "success": true
@@ -365,33 +382,214 @@
 {
   "code": "000000",
   "message": null,
+    "messageDetail": null,
   "data": {
-    "tokens": [
+        "configs": [
       {
-        "configInfo": {
-          "configId": "airdrop_001",
-          "tokenSymbol": "ALPHA_261",
-          "airdropAmount": 100.0,
-          "configName": "MPLX空投",
-          "configDescription": "Multiplex Protocol空投活动",
-          "displayStartTime": 1640995200000,
-          "claimStartTime": 1641081600000,
-          "claimEndTime": 1641168000000,
-          "contractAddress": "0x...",
+                "configId": "d31b3759cf90450f812eb7dc9c92b8a0",
+                "configName": "Giants Protocol",
+                "configDescription": "Giants Protocol",
+                "configSequence": 66,
+                "pointsThreshold": 165.000000000000000000,
+                "deductPoints": 15.000000000000000000,
+                "binanceChainId": "CT_501",
+                "chainIconUrl": "https://bin.bnbstatic.com/image/admin_mgs_image_upload/20250303/42065e0a-3808-400e-b589-61c2dbfc0eac.png",
+                "contractAddress": "GpEKud3JpJDc5D3Gek8UVCb6vAiahGmDUZMQFnf5btai",
+                "tokenSymbol": "G",
+                "tokenLogo": "static/buw/icons/g.png",
+                "alphaId": "ALPHA_282",
+                "airdropAmount": 88000.000000000000000000,
+                "displayStartTime": 1752842700000,
+                "claimStartTime": 1752843600000,
+                "claimEndTime": 1752843605000,
+                "twoStageFlag": true,
+                "stageMinutes": 0,
+                "secondPointsThreshold": 165.000000000000000000,
+                "claimedRatio": "100",
+                "status": "ended",
+                "claimInfo": {
+                    "canClaim": false,
+                    "claimLocation": "alpha",
+                    "address": "",
+                    "isEligible": true,
+                    "isSecondEligible": true,
+                    "isClaimed": true,
+                    "claimStatus": "success",
+                    "isClaimedInFirstStage": false,
+                    "isClaimedInSecondStage": true
+                },
+                "claimPreCheckInfo": {
+                    "beforeDisplayMinutes": 15,
+                    "isDisplayPreCheck": false,
+                    "isUserPreCheckPass": false
+                }
+            },
+            {
+                "configId": "fca16136c67847dc8dfb91d2e78a9992",
+                "configName": "Taker Protocol",
+                "configDescription": "Taker Protocol",
+                "configSequence": 65,
+                "pointsThreshold": 165.000000000000000000,
+                "deductPoints": 15.000000000000000000,
           "binanceChainId": "56",
-          "alphaId": "261"
-        },
+                "chainIconUrl": "https://bin.bnbstatic.com/image/admin_mgs_image_upload/20250228/d0216ce4-a3e9-4bda-8937-4a6aa943ccf2.png",
+                "contractAddress": "0xc19539eb93444523ec8f1432624924d2e6226546",
+                "tokenSymbol": "TAKER",
+                "tokenLogo": "static/buw/icons/taker.png",
+                "alphaId": "ALPHA_281",
+                "airdropAmount": 1000.000000000000000000,
+                "displayStartTime": 1752831900000,
+                "claimStartTime": 1752832800000,
+                "claimEndTime": 1752832806000,
+                "twoStageFlag": true,
+                "stageMinutes": 0,
+                "secondPointsThreshold": 165.000000000000000000,
+                "claimedRatio": "100",
+                "status": "ended",
+                "claimInfo": {
+                    "canClaim": false,
+                    "claimLocation": "",
+                    "address": "",
+                    "isEligible": true,
+                    "isSecondEligible": true,
+                    "isClaimed": false,
+                    "claimStatus": "none",
+                    "isClaimedInFirstStage": false,
+                    "isClaimedInSecondStage": false
+                },
+                "claimPreCheckInfo": {
+                    "beforeDisplayMinutes": 15,
+                    "isDisplayPreCheck": false,
+                    "isUserPreCheckPass": false
+                }
+            },
+            {
+                "configId": "712e563114f1493f99cefe0d3f270f6a",
+                "configName": "Caldera",
+                "configDescription": "Caldera",
+                "configSequence": 64,
+                "pointsThreshold": 224.000000000000000000,
+                "deductPoints": 15.000000000000000000,
+                "binanceChainId": "56",
+                "chainIconUrl": "https://bin.bnbstatic.com/image/admin_mgs_image_upload/20250228/d0216ce4-a3e9-4bda-8937-4a6aa943ccf2.png",
+                "contractAddress": "0x00312400303d02c323295f6e8b7309bc30fb6bce",
+                "tokenSymbol": "ERA",
+                "tokenLogo": "static/buw/icons/caldera.png",
+                "alphaId": "ALPHA_280",
+                "airdropAmount": 150.000000000000000000,
+                "displayStartTime": 1752758100000,
+                "claimStartTime": 1752759000000,
+                "claimEndTime": 1752823805000,
+                "twoStageFlag": true,
+                "stageMinutes": 1080,
+                "secondPointsThreshold": 140.000000000000000000,
+                "claimedRatio": "",
+                "status": "ended",
         "claimInfo": {
-          "canClaim": true,
+                    "canClaim": false,
+                    "claimLocation": "",
+                    "address": "",
+                    "isEligible": false,
+                    "isSecondEligible": false,
           "isClaimed": false,
+                    "claimStatus": "none",
+                    "isClaimedInFirstStage": false,
+                    "isClaimedInSecondStage": false
+                },
+                "claimPreCheckInfo": {
+                    "beforeDisplayMinutes": 15,
+                    "isDisplayPreCheck": false,
+                    "isUserPreCheckPass": false
+                }
+            },
+            {
+                "configId": "3749156a0c1e4ddfa69c606d9b5aec97",
+                "configName": "TAC",
+                "configDescription": "TAC",
+                "configSequence": 63,
+                "pointsThreshold": 224.000000000000000000,
+                "deductPoints": 15.000000000000000000,
+                "binanceChainId": "56",
+                "chainIconUrl": "https://bin.bnbstatic.com/image/admin_mgs_image_upload/20250228/d0216ce4-a3e9-4bda-8937-4a6aa943ccf2.png",
+                "contractAddress": "0x1219c409fabe2c27bd0d1a565daeed9bd9f271de",
+                "tokenSymbol": "TAC",
+                "tokenLogo": "static/buw/icons/tac.png",
+                "alphaId": "ALPHA_277",
+                "airdropAmount": 1875.000000000000000000,
+                "displayStartTime": 1752572700000,
+                "claimStartTime": 1752573600000,
+                "claimEndTime": 1752638410000,
+                "twoStageFlag": true,
+                "stageMinutes": 1080,
+                "secondPointsThreshold": 140.000000000000000000,
+                "claimedRatio": "",
+                "status": "ended",
+                "claimInfo": {
+                    "canClaim": false,
+                    "claimLocation": "",
+                    "address": "",
           "isEligible": true,
-          "claimStatus": "AVAILABLE"
+                    "isSecondEligible": true,
+                    "isClaimed": true,
+                    "claimStatus": "success",
+                    "isClaimedInFirstStage": true,
+                    "isClaimedInSecondStage": false
+                },
+                "claimPreCheckInfo": {
+                    "beforeDisplayMinutes": 15,
+                    "isDisplayPreCheck": false,
+                    "isUserPreCheckPass": false
+                }
+            },
+            {
+                "configId": "7d60e69a607c11f0ab54067961fb7a23",
+                "configName": "Chainbase",
+                "configDescription": "Chainbase",
+                "configSequence": 62,
+                "pointsThreshold": 160.000000000000000000,
+                "deductPoints": 15.000000000000000000,
+                "binanceChainId": "56",
+                "chainIconUrl": "https://bin.bnbstatic.com/image/admin_mgs_image_upload/20250228/d0216ce4-a3e9-4bda-8937-4a6aa943ccf2.png",
+                "contractAddress": "0xc32cc70741c3a8433dcbcb5ade071c299b55ffc8",
+                "tokenSymbol": "C",
+                "tokenLogo": "static/buw/icons/chainbase.png",
+                "alphaId": "ALPHA_275",
+                "airdropAmount": 750.000000000000000000,
+                "displayStartTime": 1752493500000,
+                "claimStartTime": 1752494400000,
+                "claimEndTime": 1752494407000,
+                "twoStageFlag": true,
+                "stageMinutes": 0,
+                "secondPointsThreshold": 160.000000000000000000,
+                "claimedRatio": "",
+                "status": "ended",
+                "claimInfo": {
+                    "canClaim": false,
+                    "claimLocation": "",
+                    "address": "",
+                    "isEligible": false,
+                    "isSecondEligible": false,
+                    "isClaimed": false,
+                    "claimStatus": "none",
+                    "isClaimedInFirstStage": false,
+                    "isClaimedInSecondStage": false
+                },
+                "claimPreCheckInfo": {
+                    "beforeDisplayMinutes": 15,
+                    "isDisplayPreCheck": false,
+                    "isUserPreCheckPass": false
         }
       }
     ],
-    "total": 5,
-    "page": 1,
-    "rows": 50
+        "userInfo": {
+            "isRiskHit": false,
+            "isCompliancePass": true,
+            "hasWeb3Wallet": null
+        },
+        "pageInfo": {
+            "curPage": 1,
+            "total": 65
+        }
   },
   "success": true
 }
@@ -422,18 +620,12 @@
 **响应数据**:
 ```json
 {
-    "code": "100001001",
-    "message": "系统异常",
-    "messageDetail": {
-        "title": null,
-        "type": null,
-        "icon": null,
-        "action": null,
-        "linkTitle": null,
-        "linkUrl": null
+    "code": "000000",
+    "message": "领取成功",
+    "data": {
+        "claimStatus": "success"
     },
-    "data": null,
-    "success": false
+    "success": true
 }
 ```
 
@@ -664,19 +856,33 @@ baseAsset=ALPHA_22&endTime=1752854399999&orderStatus=FILLED&page=1&rows=500&star
   "code": "000000",
   "data": [
     {
-      "orderId": "string",
-      "baseAsset": "string",
-      "quoteAsset": "string",
-      "side": "BUY",
-      "orderType": "string",
-      "price": "float",
-      "quantity": "float",
-      "executedQty": "float",
-      "cumQuote": "float",
-      "status": "string",
-      "time": "timestamp"
+      "kind": "LIMIT",
+      "orderId": "22522520",
+      "symbol": "ALPHA_261USDT",
+      "status": "FILLED",
+      "price": "0.18670189",
+      "avgPrice": "0.1875",
+      "origQty": "1362.93",
+      "executedQty": "1362.93",
+      "type": "LIMIT",
+      "side": "SELL",
+      "time": 1752848863114,
+      "updateTime": 1752848863158,
+      "baseAsset": "ALPHA_261",
+      "quoteAsset": "USDT",
+      "fromToken": null,
+      "fromTokenAmount": null,
+      "fromBinanceChainId": null,
+      "fromContractAddress": null,
+      "toToken": null,
+      "toTokenAmount": null,
+      "toBinanceChainId": null,
+      "toContractAddress": null,
+      "alphaId": "ALPHA_261"
     }
-  ]
+  ],
+  "total": 18,
+  "success": true
 }
 ```
 
@@ -927,6 +1133,40 @@ baseAsset=ALPHA_22&endTime=1752854399999&orderStatus=FILLED&page=1&rows=500&star
 	"success": true
 }
 '''
+
+---
+
+### 查询资产详情
+```
+GET /bapi/asset/v3/private/asset-service/wallet/asset-detail?asset=ERA&quoteAsset=USDT
+```
+**请求参数:**
+- asset: 资产币种（如 ERA）
+- quoteAsset: 计价币种（如 USDT）
+
+**返回数据:**
+```json
+{
+    "code": "000000",
+    "message": null,
+    "messageDetail": null,
+    "data": {
+        "asset": "ERA",
+        "assetName": "Caldera",
+        "logoUrl": "https://bin.bnbstatic.com/image/admin_mgs_image_upload/20250716/63cbc507-41ad-41a4-907d-b6ba909dc636.png",
+        "assetDetails": [
+            {
+                "accountType": "SAVING",
+                "uniAccountType": "PM_2",
+                "walletName": "理财账户",
+                "amount": "0.09557061",
+                "valuationAmount": "0.11431201"
+            }
+        ]
+    },
+    "success": true
+}
+```
 
 ---
 

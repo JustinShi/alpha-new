@@ -1,0 +1,59 @@
+# 自动下单系统全局配置
+
+# 全局目标代币名称（如MPLX）
+target_token = "CROSS"
+# 单次购买金额（USDT）
+buy_amount = 10.0
+# 每个用户目标总金额（USDT）
+target_total_amount = 40000.0
+# 买入滑点（百分比，0.002=0.2%）
+buy_slippage = 0.005
+# 卖出滑点（百分比，0.002=0.2%）
+sell_slippage = 0.005
+
+# 系统级配置
+[system]
+# 计价货币
+quote_currency = "USDT"
+# 买入支付方式
+buy_payment_type = "CARD"
+# 卖出支付方式
+sell_payment_type = "ALPHA"
+# 交易手续费率（0.0001 = 0.01%）
+trading_fee_rate = 0.0001
+# 最小卖出数量
+min_sell_quantity = 0.01
+# 价格精度
+price_precision = 0.00000001
+# 数量精度
+quantity_precision = 0.01
+# 订单等待超时时间（秒）
+order_wait_timeout = 2.0
+# WebSocket连接建立延迟（秒）
+websocket_setup_delay = 2.0
+# 最大重试次数
+max_retry = 5
+
+# 是否启用余额不足时的自动卖出
+enable_auto_sell_on_insufficient_balance = true
+# 最小余额阈值（小于此值不进行交易）
+min_balance_threshold = 0.01
+
+# 用户配置（可覆盖全局配置）
+[[users]]
+user_id = 1
+enabled = true
+
+[[users]]
+user_id = 2
+enabled = false
+
+[[users]]
+user_id = 3
+enabled = false
+# 使用全局buy_amount、target_total_amount、滑点 
+
+[[users]]
+user_id = 4
+enabled = false
+# 使用全局buy_amount、target_total_amount、滑点

@@ -72,3 +72,7 @@ dmypy.json
 # 包管理器缓存
 node_modules/
 package-lock.json
+
+# 备份文件
+backups/
+*.backup
