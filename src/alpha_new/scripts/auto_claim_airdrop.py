@@ -5,13 +5,13 @@ import os
 import sys
 import time
 
-import httpx
 import toml
 
 from alpha_new.api.alpha_api import AlphaAPI
 from alpha_new.db.models import init_db
 from alpha_new.db.ops import get_user_by_id, get_valid_users
 from alpha_new.utils import get_claim_logger
+from alpha_new.utils.time_helpers import get_binance_server_time
 
 logger = get_claim_logger()
 
@@ -42,13 +42,6 @@ CLAIM_RETRY_INTERVAL = float(
     get_required_config("claim_retry_interval", "领取重试间隔（秒）")
 )
 ADVANCE_MS = int(config.get("advance_ms", 120))  # 可选提前补偿
-
-
-async def get_binance_time() -> datetime:
-    async with httpx.AsyncClient() as client:
-        resp = await client.get(BINANCE_TIME_API)
-        server_time = resp.json()["serverTime"]  # 毫秒
-        return datetime.fromtimestamp(server_time / 1000)
 
 
 def get_next_target_time(hour: int, minute: int, second: int) -> datetime:
@@ -141,7 +134,6 @@ async def claim_for_user(
                         try:
                             result = await api.claim_airdrop(config_id)
                             # 记录详细的API响应到汇总日志中
-                            # 详细数据将在最后统一写入汇总文件
                             code = result.get("code")
                             msg = result.get("message", "无返回信息")
                             claim_info = result.get("data", {}).get("claimInfo", {})
@@ -200,7 +192,7 @@ async def calibrate_time_offset(repeat=5):
     offsets = []
     for _ in range(repeat):
         t0 = time.time()
-        server_time = (await get_binance_time()).timestamp()
+        server_time = (await get_binance_server_time()).timestamp()
         t1 = time.time()
         local_time = (t0 + t1) / 2
         offsets.append(server_time - local_time)

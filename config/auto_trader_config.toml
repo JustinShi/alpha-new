@@ -5,7 +5,7 @@ target_token = "CROSS"
 # 单次购买金额（USDT）
 buy_amount = 10.0
 # 每个用户目标总金额（USDT）
-target_total_amount = 40000.0
+target_total_amount = 65536.0
 # 买入滑点（百分比，0.002=0.2%）
 buy_slippage = 0.005
 # 卖出滑点（百分比，0.002=0.2%）

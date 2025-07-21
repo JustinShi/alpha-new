@@ -1,0 +1,49 @@
+
+# Alpha New 应用程序配置文件
+
+[database]
+url = "sqlite+aiosqlite:///data/alpha_users.db"
+echo = false
+pool_size = 10
+max_overflow = 20
+
+[api]
+base_url = "https://www.binance.com"
+timeout = 30
+max_retries = 3
+retry_delay = 1.0
+rate_limit = 100
+
+[logging]
+level = "INFO"
+file = "logs/alpha_new.log"
+max_size = 10485760  # 10MB
+backup_count = 5
+format = "%(asctime)s | %(name)s | %(levelname)s | %(message)s"
+
+[trading]
+target_token = "CROSS"
+buy_amount = 10.0
+target_total_amount = 40000.0
+buy_slippage = 0.005
+sell_slippage = 0.005
+max_retry = 5
+order_timeout = 2.0
+
+[airdrop]
+token_symbol = "TA"
+alpha_id = ""
+target_hour = 15
+target_minute = 0
+target_second = 0
+advance_ms = 1000
+claim_retry_times = 15
+query_interval = 0.1
+min_score = 210
+
+[user_session]
+check_interval_hours = 2        # 用户状态检查间隔（小时）
+cache_duration_minutes = 30     # 缓存有效时长（分钟）
+min_valid_users = 2            # 最少有效用户数
+max_concurrent_checks = 3      # 最大并发检查数
+smart_check_threshold = 3      # 智能检查阈值（用户数超过此值时启用智能检查）

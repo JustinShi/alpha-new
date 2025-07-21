@@ -83,10 +83,16 @@ def setup_logging(
         file_handler.setFormatter(formatter)
         root_logger.addHandler(file_handler)
 
-    # 设置特定模块的日志级别（如果配置文件中未指定）
-    if not config_file or not Path(config_file).exists():
-        logging.getLogger("httpx").setLevel(logging.WARNING)  # 减少HTTP请求日志
-        logging.getLogger("asyncio").setLevel(logging.WARNING)  # 减少异步事件日志
+    # 强制设置特定模块的日志级别
+    logging.getLogger("httpx").setLevel(logging.WARNING)  # 减少HTTP请求日志
+    logging.getLogger("asyncio").setLevel(logging.WARNING)  # 减少异步事件日志
+    logging.getLogger("sqlalchemy.engine").setLevel(logging.CRITICAL)  # 完全隐藏SQL日志
+    logging.getLogger("sqlalchemy.pool").setLevel(
+        logging.CRITICAL
+    )  # 完全隐藏连接池日志
+    logging.getLogger("sqlalchemy.dialects").setLevel(
+        logging.CRITICAL
+    )  # 完全隐藏方言日志
 
 
 # 默认设置

@@ -11,9 +11,15 @@ import toml
 from alpha_new.api.alpha_api import AlphaAPI
 from alpha_new.db.models import init_db
 from alpha_new.db.ops import get_valid_users
+from alpha_new.utils.async_optimizer import (
+    OptimizedTradingAPI,
+    TradingDataProcessor,
+    get_performance_monitor,
+)
 from alpha_new.utils.error_handler import ErrorHandler, ErrorType, global_error_handler
 from alpha_new.utils.logger import get_api_logger, get_order_data_logger
 from alpha_new.utils.websocket import BinanceWebSocket
+from alpha_new.utils.websocket_manager import ManagedWebSocket, get_websocket_manager
 
 logger = get_api_logger()
 order_data_logger = get_order_data_logger()
@@ -125,6 +131,7 @@ class AutoTrader:
         self.max_retry = (
             max_retry if max_retry is not None else TradingConfig.DEFAULT_MAX_RETRY
         )
+
         # 交易统计
         self.total_traded_amount = 0.0  # 已交易总金额
         self.trade_count = 0  # 交易次数
@@ -140,6 +147,81 @@ class AutoTrader:
         self._consecutive_errors = 0
         # 错误处理器
         self.error_handler = ErrorHandler()
+
+        # 🚀 新增：优化组件
+        self.optimized_api = OptimizedTradingAPI(api)
+        self.data_processor = TradingDataProcessor()
+        self.performance_monitor = get_performance_monitor()
+        self.ws_manager = get_websocket_manager()
+        self._managed_ws_order: ManagedWebSocket | None = None
+        self._managed_ws_price: ManagedWebSocket | None = None
+
+    async def setup_optimized_websockets(
+        self, headers: dict, cookies: dict, price_stream: str
+    ):
+        """设置优化的WebSocket连接"""
+        try:
+            # 创建订单流连接
+            self._managed_ws_order = await self.ws_manager.connect_order_stream(
+                f"user_{self.user_id}", headers, cookies
+            )
+
+            # 创建价格流连接
+            self._managed_ws_price = await self.ws_manager.connect_price_stream(
+                f"user_{self.user_id}", price_stream
+            )
+
+            logger.info(f"用户{self.user_id} WebSocket连接已优化设置完成")
+
+        except Exception as e:
+            logger.error(f"用户{self.user_id} WebSocket优化设置失败: {e}")
+            raise
+
+    async def get_optimized_latest_price(self) -> float:
+        """获取优化的最新价格（保持实时性）"""
+        start_time = time.time()
+
+        try:
+            # 仍然从WebSocket实时获取，但添加性能监控
+            while True:
+                data = await self.ws_client.price_queue.get()
+                price = data.get("data", {}).get("k", {}).get("c")
+                if price:
+                    price_float = float(price)
+
+                    # 添加到数据处理器（用于趋势分析，不缓存）
+                    self.data_processor.add_price_data(price_float)
+
+                    # 记录WebSocket延迟
+                    latency = time.time() - start_time
+                    self.performance_monitor.record_websocket_latency(latency)
+
+                    return price_float
+
+        except Exception as e:
+            self.performance_monitor.record_error("websocket")
+            logger.error(f"获取实时价格失败: {e}")
+            raise
+
+    async def get_optimized_balance_batch(self) -> dict:
+        """批量获取余额信息（一次API调用获取多个代币）"""
+        start_time = time.time()
+
+        try:
+            # 获取所有需要的代币余额
+            token_symbols = [self.token_symbol, "USDT"]
+            balances = await self.optimized_api.get_multiple_balances(token_symbols)
+
+            # 记录API调用时间
+            api_time = time.time() - start_time
+            self.performance_monitor.record_api_call(api_time)
+
+            return balances
+
+        except Exception as e:
+            self.performance_monitor.record_error("api")
+            logger.error(f"批量获取余额失败: {e}")
+            raise
 
     async def initialize_cumulative_amount(self) -> bool:
         """
@@ -840,12 +922,23 @@ class AutoTrader:
                 logger.info(f"用户{self.user_id}最终检查：未达标，但循环已结束")
 
     async def get_latest_price(self) -> float:
-        # 从WebSocket实时获取最新价格
+        # 🚀 优化：从WebSocket实时获取最新价格，添加性能监控
+        start_time = time.time()
+
         while True:
             data = await self.ws_client.price_queue.get()
             price = data.get("data", {}).get("k", {}).get("c")
             if price:
-                return float(price)
+                price_float = float(price)
+
+                # 添加到数据处理器（用于趋势分析）
+                self.data_processor.add_price_data(price_float)
+
+                # 记录WebSocket延迟
+                latency = time.time() - start_time
+                self.performance_monitor.record_websocket_latency(latency)
+
+                return price_float
 
     async def wait_order_filled(self, order_id: str, side: str) -> bool:
         # 监听订单推送，判断是否完全成交
@@ -862,12 +955,25 @@ class AutoTrader:
                 return False
 
     async def get_token_balance(self, token_symbol: str) -> float:
-        """获取指定代币的余额"""
-        data = await self.api.get_wallet_balance()
-        for asset in data.get("data", []):
-            if asset.get("asset") == token_symbol:
-                return float(asset.get("amount", 0))
-        return 0.0
+        """获取指定代币的余额（优化版本）"""
+        start_time = time.time()
+
+        try:
+            data = await self.api.get_wallet_balance()
+
+            # 记录API调用时间
+            api_time = time.time() - start_time
+            self.performance_monitor.record_api_call(api_time)
+
+            for asset in data.get("data", []):
+                if asset.get("asset") == token_symbol:
+                    return float(asset.get("amount", 0))
+            return 0.0
+
+        except Exception as e:
+            self.performance_monitor.record_error("api")
+            logger.error(f"获取{token_symbol}余额失败: {e}")
+            raise
 
     async def get_cached_token_balance(self, token_symbol: str) -> float:
         """获取代币余额（直接调用，无缓存）"""

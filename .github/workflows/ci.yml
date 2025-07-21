@@ -51,7 +51,7 @@ jobs:
     - name: Type check with MyPy
       run: |
         echo "=== MyPy类型检查 ==="
-        python -m mypy src/alpha_new/ --config-file=mypy.ini
+        python -m mypy src/alpha_new/
 
     - name: Test with pytest
       run: |
@@ -132,4 +132,4 @@ jobs:
         path: |
           bandit-report.json
         retention-days: 30
-      if: always() 
+      if: always()

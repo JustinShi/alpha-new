@@ -4,6 +4,7 @@ from typing import Any
 import httpx
 
 from ..utils import get_api_logger
+from ..utils.http_pool import BINANCE_CLIENT_CONFIG, get_http_client
 
 BASE_URL = "https://www.binance.com"
 logger = get_api_logger()
@@ -23,31 +24,21 @@ class AlphaAPI:
         self._client_lock = asyncio.Lock()
 
     async def _get_client(self) -> httpx.AsyncClient:
-        """获取或创建HTTP客户端连接池"""
-        if self._client is None:
-            async with self._client_lock:
-                if self._client is None:
-                    self._client = httpx.AsyncClient(
-                        timeout=httpx.Timeout(
-                            connect=5.0,  # 连接超时5秒
-                            read=15.0,  # 读取超时15秒
-                            write=10.0,  # 写入超时10秒
-                            pool=20.0,  # 连接池超时20秒
-                        ),
-                        limits=httpx.Limits(
-                            max_keepalive_connections=20, max_connections=100
-                        ),
-                        http2=True,
-                        # 启用连接复用和Keep-Alive
-                        headers={"Connection": "keep-alive"},
-                    )
-        return self._client
+        """获取HTTP客户端（优化版本 - 使用全局连接池）"""
+        # 🚀 优化：使用全局连接池，为每个用户创建独立的客户端ID
+        client_id = (
+            f"binance_user_{self.user_id}" if self.user_id else "binance_default"
+        )
+        return await get_http_client(
+            client_id=client_id,
+            base_url=BINANCE_CLIENT_CONFIG["base_url"],
+            timeout=BINANCE_CLIENT_CONFIG["timeout"],
+        )
 
     async def close(self):
-        """关闭HTTP客户端连接池"""
-        if self._client:
-            await self._client.aclose()
-            self._client = None
+        """关闭HTTP客户端连接池（已优化为全局连接池，无需手动关闭）"""
+        # 🚀 优化：使用全局连接池，无需手动关闭
+        # 连接池会自动管理连接的生命周期
 
     async def get_user_info(self) -> Any:
         url = f"{BASE_URL}/bapi/accounts/v1/private/account/user/base-detail"
@@ -62,7 +53,7 @@ class AlphaAPI:
         return resp.json()
 
     async def get_alpha_score(self) -> Any:
-        url = f"{BASE_URL}/bapi/defi/v1/private/wallet-direct/buw/growth/user-score"
+        url = f"{BASE_URL}/bapi/defi/v1/private/wallet-direct/buw/tge/common/user-score"
         user_prefix = f"[用户{self.user_id}] " if self.user_id else ""
         logger.info(f"{user_prefix}GET {url}")
         client = await self._get_client()
@@ -87,13 +78,31 @@ class AlphaAPI:
         payload = {"page": page, "rows": rows}
         user_prefix = f"[用户{self.user_id}] " if self.user_id else ""
         logger.info(f"{user_prefix}POST {url} | payload={payload}")
-        client = await self._get_client()
-        resp = await client.post(
-            url, headers=self.headers, cookies=self.cookies, json=payload
-        )
-        logger.info(f"{user_prefix}Response {resp.status_code}: {resp.text[:200]}")
-        resp.raise_for_status()
-        return resp.json()
+
+        try:
+            client = await self._get_client()
+            resp = await client.post(
+                url, headers=self.headers, cookies=self.cookies, json=payload
+            )
+            logger.info(f"{user_prefix}Response {resp.status_code}: {resp.text[:200]}")
+            resp.raise_for_status()
+            return resp.json()
+        except Exception as e:
+            logger.error(f"{user_prefix}查询空投列表请求失败: {e}")
+            # 如果是连接问题，清理客户端以便下次重新创建
+            if (
+                "NoneType" in str(e)
+                or "send" in str(e)
+                or "connection" in str(e).lower()
+            ):
+                logger.warning(f"{user_prefix}检测到连接问题，清理HTTP客户端")
+                if hasattr(self, "_client") and self._client:
+                    try:
+                        await self._client.aclose()
+                    except:
+                        pass
+                    self._client = None
+            raise
 
     async def claim_airdrop(self, config_id: str) -> Any:
         url = f"{BASE_URL}/bapi/defi/v1/private/wallet-direct/buw/growth/claim-alpha-airdrop"

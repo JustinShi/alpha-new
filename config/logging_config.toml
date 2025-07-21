@@ -22,4 +22,7 @@ alpha_new.claim = "INFO"
 # 第三方库的日志级别
 httpx = "WARNING"
 asyncio = "WARNING"
-sqlalchemy = "WARNING"
+sqlalchemy = "ERROR"
+"sqlalchemy.engine" = "ERROR"
+"sqlalchemy.pool" = "ERROR"
+"sqlalchemy.dialects" = "ERROR"
