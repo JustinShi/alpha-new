@@ -23,4 +23,4 @@ poetry run alpha-new
 poetry install --with dev
 ```
 
-详细API与用法请参考 docs/API_REQUESTS_REFERENCE.md。 
+详细API与用法请参考 docs/API_REQUESTS_REFERENCE.md。

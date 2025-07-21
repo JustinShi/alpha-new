@@ -51,7 +51,7 @@ enabled = false
 [[users]]
 user_id = 3
 enabled = false
-# 使用全局buy_amount、target_total_amount、滑点 
+# 使用全局buy_amount、target_total_amount、滑点
 
 [[users]]
 user_id = 4

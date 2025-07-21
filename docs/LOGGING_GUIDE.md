@@ -120,8 +120,63 @@ clean(days=7, confirm=True)
 
 日志文件默认保存在项目根目录的 `logs/` 文件夹中：
 - `alpha_new.log`: 主日志文件
-- `claim_log_*.json`: 空投领取结果日志
+- `order_data.log`: 交易订单数据日志
+- `claim_log_日期.log`: 空投领取结果汇总日志（按日期）
+- `last_user_query_time.log`: 用户查询时间记录
 - 其他自定义日志文件
+
+空投领取日志格式说明：
+```json
+[
+  {
+    "timestamp": "2025-07-21 15:00:03",  // 领取时间
+    "user_id": 1,                        // 用户ID
+    "result": "[用户1] 领取成功",         // 领取结果
+    "script": "semi_auto_claim_airdrop"  // 执行脚本
+  },
+  // 更多记录...
+]
+```
+
+## 网络延迟优化
+
+### 延迟问题诊断
+如果发现定时执行但响应延迟的问题，可以：
+
+1. **运行网络延迟测试**:
+   ```bash
+   poetry run python -m alpha_new.scripts.network_latency_test
+   ```
+
+2. **调整提前补偿时间**:
+   在 `config/airdrop_config.toml` 中修改 `advance_ms` 参数：
+   ```toml
+   # 建议设置为网络延迟的1.5-2倍
+   advance_ms = 3000  # 3秒提前补偿
+   ```
+
+3. **查看API请求延迟日志**:
+   在主日志文件中查找 "API请求延迟" 关键词
+
+## API日志用户追踪
+
+### 用户ID标识
+所有API调用日志现在都包含用户ID信息，便于问题排查：
+
+```
+# 带用户ID的日志格式
+2025-07-21 17:57:56 | alpha_new.api | INFO | [用户1] POST https://www.binance.com/bapi/defi/v1/private/wallet-direct/buw/growth/claim-alpha-airdrop | config_id=xxx
+2025-07-21 17:57:58 | alpha_new.api | INFO | [用户1] Response 200: {"code":"000000","message":null,...}
+
+# 不带用户ID的日志格式（旧版本或未指定用户ID的调用）
+2025-07-21 17:57:56 | alpha_new.api | INFO | POST https://www.binance.com/bapi/defi/v1/private/wallet-direct/buw/growth/claim-alpha-airdrop | config_id=xxx
+2025-07-21 17:57:58 | alpha_new.api | INFO | Response 200: {"code":"000000","message":null,...}
+```
+
+### 日志筛选技巧
+1. **按用户筛选**: 搜索 `[用户1]` 查看特定用户的所有API调用
+2. **按API类型筛选**: 搜索 `claim-alpha-airdrop` 查看所有空投领取请求
+3. **按响应状态筛选**: 搜索 `Response 200` 或 `Response 429` 等
 
 ## 最佳实践
 
@@ -210,4 +265,4 @@ start_time = time.time()
 # 执行操作
 execution_time = time.time() - start_time
 logger.info(f"操作执行完成，耗时: {execution_time:.2f}秒")
-``` 
+```

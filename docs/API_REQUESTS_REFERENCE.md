@@ -28,7 +28,7 @@
 
 **请求方法**: `POST`
 
-**请求头**: 
+**请求头**:
 ```json
 {
   "Content-Type": "application/json",
@@ -74,7 +74,7 @@
 
 **请求方法**: `GET`
 
-**请求头**: 
+**请求头**:
 ```json
 {
   "Content-Type": "application/json",
@@ -296,7 +296,7 @@
 
 **请求方法**: `GET`
 
-**请求头**: 
+**请求头**:
 ```json
 {
   "Content-Type": "application/json",
@@ -359,7 +359,7 @@
 
 **请求方法**: `POST`
 
-**请求头**: 
+**请求头**:
 ```json
 {
   "Content-Type": "application/json",
@@ -600,7 +600,7 @@
 
 **请求方法**: `POST`
 
-**请求头**: 
+**请求头**:
 ```json
 {
   "Content-Type": "application/json",
@@ -638,7 +638,7 @@
 
 **请求方法**: `POST`
 
-**请求头**: 
+**请求头**:
 ```json
 {
   "Content-Type": "application/json",
@@ -685,7 +685,7 @@
 
 **请求方法**: `POST`
 
-**请求头**: 
+**请求头**:
 ```json
 {
   "Content-Type": "application/json",
@@ -755,7 +755,7 @@
 
 **请求方法**: `POST`
 
-**请求头**: 
+**请求头**:
 ```json
 {
   "Content-Type": "application/json",
@@ -846,7 +846,7 @@ GET /bapi/defi/v1/private/alpha-trade/order/get-order-history-merge
 ```
 **请求参数:**
 ```
-baseAsset=ALPHA_22&endTime=1752854399999&orderStatus=FILLED&page=1&rows=500&startTime=1737129600000 
+baseAsset=ALPHA_22&endTime=1752854399999&orderStatus=FILLED&page=1&rows=500&startTime=1737129600000
 ```
 不包含baseAsset=ALPHA_22可查所有代币
 '''
@@ -1025,7 +1025,7 @@ baseAsset=ALPHA_22&endTime=1752854399999&orderStatus=FILLED&page=1&rows=500&star
 ### 钱包余额查询
 **端点**: `GET /bapi/asset/v2/private/asset-service/wallet/asset?needAlphaAsset=1&quoteAsset=USDT`
 
-**返回数据**: 
+**返回数据**:
 ```
 {
 	"code": "000000",
@@ -1189,4 +1189,3 @@ GET /bapi/asset/v3/private/asset-service/wallet/asset-detail?asset=ERA&quoteAsse
 | ListenKey | `/bapi/defi/v1/private/alpha-trade/get-listen-key` | POST | ✅ | 获取WebSocket密钥 |
 
 ---
-

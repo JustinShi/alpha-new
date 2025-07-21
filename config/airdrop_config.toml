@@ -1,17 +1,17 @@
 # 自动领取空投配置
 
 # 目标代币tokenSymbol（如G、TAKER等，不是ALPHA_261）
-token_symbol = "G"
+token_symbol = "TA"
 # 可选：目标代币alphaId（如ALPHA_261），如需按alphaId查找请填写
 alpha_id = ""
 
 # 领取时间
-target_hour = 16 #小时
-target_minute = 38 #分钟
+target_hour = 15 #小时
+target_minute = 0 #分钟
 target_second = 0 #秒
 
 # 空投积分阈值，只有积分大于等于该值的用户才参与
-min_score = 160
+min_score = 210
 
 # 查询参数
 query_interval = 0.1      # 查询间隔（秒）
@@ -22,4 +22,7 @@ claim_retry_times = 15
 claim_retry_interval = 0.1
 
 # 提前补偿时间（毫秒），高频查询将在目标时间前多少毫秒启动
-advance_ms = 120 
+# 基于网络延迟测试结果，时间同步API平均延迟127ms，95%延迟217ms
+# 空投领取API延迟通常更高，建议设置为1000-3000ms
+# 可运行 poetry run python -m alpha_new.scripts.network_latency_test 测试当前网络状况
+advance_ms = 500

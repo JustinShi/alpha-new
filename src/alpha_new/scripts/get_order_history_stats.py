@@ -1,30 +1,40 @@
 import asyncio
-import toml
-from datetime import datetime, timedelta, time as dtime
+from datetime import datetime, timedelta
+import json
+
 from rich.console import Console
 from rich.table import Table
-from alpha_new.db.models import init_db
-from alpha_new.db.ops import get_user_by_id, get_all_user_ids, get_valid_users
+import toml
+
 from alpha_new.api.alpha_api import AlphaAPI
+from alpha_new.db.models import init_db
+from alpha_new.db.ops import get_user_by_id, get_valid_users
 from alpha_new.utils import get_script_logger
-import json
+
 
 # 辅助函数: 将dict的key/value从bytes转str
 def decode_dict(d) -> dict[str, str]:
     if not d:
         return {}
-    return {k.decode() if isinstance(k, bytes) else k: v.decode() if isinstance(v, bytes) else v for k, v in d.items()}
+    return {
+        k.decode() if isinstance(k, bytes) else k: v.decode()
+        if isinstance(v, bytes)
+        else v
+        for k, v in d.items()
+    }
+
 
 console = Console()
 logger = get_script_logger()
 
 CONFIG_PATH = "config/airdrop_config.toml"
 
+
 def get_time_range():
     now = datetime.now()
     today_8 = now.replace(hour=8, minute=0, second=0, microsecond=0)
     if now < today_8:
-        start = (today_8 - timedelta(days=1))
+        start = today_8 - timedelta(days=1)
         end = today_8
     else:
         start = today_8
@@ -32,14 +42,20 @@ def get_time_range():
     # 转为毫秒时间戳
     return int(start.timestamp() * 1000), int(end.timestamp() * 1000)
 
+
 def load_symbol_map_from_file(path="data/token_info.json"):
     try:
-        with open(path, "r", encoding="utf-8") as f:
+        with open(path, encoding="utf-8") as f:
             tokens = json.load(f)
-        return {item["alphaId"]: item["symbol"] for item in tokens if "alphaId" in item and "symbol" in item}
+        return {
+            item["alphaId"]: item["symbol"]
+            for item in tokens
+            if "alphaId" in item and "symbol" in item
+        }
     except Exception as e:
         logger.warning(f"加载本地币种映射失败: {e}")
         return {}
+
 
 async def fetch_token_symbol_map(api: AlphaAPI) -> dict[str, str]:
     # 通过AlphaAPI方法获取币种symbol与baseAsset映射
@@ -51,8 +67,12 @@ async def fetch_token_symbol_map(api: AlphaAPI) -> dict[str, str]:
                 symbol_map[item["baseAsset"]] = item["symbol"]
     return symbol_map
 
-async def get_user_order_stats(user_id: int, engine, symbol_map: dict[str, str], start_ms: int, end_ms: int) -> dict:
+
+async def get_user_order_stats(
+    user_id: int, engine, symbol_map: dict[str, str], start_ms: int, end_ms: int
+) -> dict:
     from sqlalchemy.ext.asyncio import async_sessionmaker
+
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as session:
         user = await get_user_by_id(session, user_id)
@@ -67,7 +87,13 @@ async def get_user_order_stats(user_id: int, engine, symbol_map: dict[str, str],
         all_orders = []
         total = None
         while True:
-            params = {"page": page, "rows": rows, "orderStatus": "FILLED", "startTime": start_ms, "endTime": end_ms}
+            params = {
+                "page": page,
+                "rows": rows,
+                "orderStatus": "FILLED",
+                "startTime": start_ms,
+                "endTime": end_ms,
+            }
             try:
                 resp = await api.get_order_history(params)
                 orders = resp.get("data", [])
@@ -110,10 +136,12 @@ async def get_user_order_stats(user_id: int, engine, symbol_map: dict[str, str],
             stats[symbol]["net"] = stats[symbol]["buy"] - stats[symbol]["sell"]
         return {"user_id": user_id, "stats": stats}
 
+
 async def main():
     config = toml.load(CONFIG_PATH)
     engine = await init_db("sqlite+aiosqlite:///data/alpha_users.db")
     from sqlalchemy.ext.asyncio import async_sessionmaker
+
     async_session = async_sessionmaker(engine, expire_on_commit=False)
     async with async_session() as session:
         users = await get_valid_users(session)
@@ -124,14 +152,21 @@ async def main():
     if not symbol_map and user_ids:
         user = await get_user_by_id(async_session(), user_ids[0])
         headers = decode_dict(user.headers) if user and user.headers is not None else {}
-        cookies = decode_dict(user.cookies) if user and user.cookies is not None else None
-        api = AlphaAPI(headers=headers, cookies=cookies)
+        cookies = (
+            decode_dict(user.cookies) if user and user.cookies is not None else None
+        )
+        api = AlphaAPI(headers=headers, cookies=cookies, user_id=user_ids[0])
         symbol_map = await fetch_token_symbol_map(api)
     # 自动时间区间
     start_ms, end_ms = get_time_range()
-    logger.info(f"查询时间区间: {datetime.fromtimestamp(start_ms/1000)} ~ {datetime.fromtimestamp(end_ms/1000)}")
+    logger.info(
+        f"查询时间区间: {datetime.fromtimestamp(start_ms/1000)} ~ {datetime.fromtimestamp(end_ms/1000)}"
+    )
     # 查询所有用户订单
-    tasks = [get_user_order_stats(uid, engine, symbol_map, start_ms, end_ms) for uid in user_ids]
+    tasks = [
+        get_user_order_stats(uid, engine, symbol_map, start_ms, end_ms)
+        for uid in user_ids
+    ]
     results = await asyncio.gather(*tasks)
     # 输出表格
     table = Table(title="用户订单历史统计（按代币）")
@@ -145,12 +180,19 @@ async def main():
         stats = res["stats"]
         first = True
         for symbol, s in stats.items():
-            table.add_row(user_id if first else "", symbol, f"{s['buy']:.4f}", f"{s['sell']:.4f}", f"{s['net']:.4f}")
+            table.add_row(
+                user_id if first else "",
+                symbol,
+                f"{s['buy']:.4f}",
+                f"{s['sell']:.4f}",
+                f"{s['net']:.4f}",
+            )
             first = False
         # 如果不是最后一个用户，插入分割行
         if idx < len(results) - 1:
-            table.add_row("─"*6, "─"*6, "─"*10, "─"*10, "─"*10)
+            table.add_row("─" * 6, "─" * 6, "─" * 10, "─" * 10, "─" * 10)
     console.print(table)
 
+
 if __name__ == "__main__":
-    asyncio.run(main()) 
+    asyncio.run(main())

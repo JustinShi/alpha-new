@@ -1,33 +1,36 @@
+import asyncio
+from datetime import datetime
 import os
-import typer
+
 from rich.console import Console
-from rich.table import Table
 from rich.panel import Panel
 from rich.prompt import Prompt
-import asyncio
-from alpha_new.db.models import init_db
-from alpha_new.db.ops import get_all_user_ids
-from alpha_new.utils import get_cli_logger
+from rich.table import Table
 import toml
-from datetime import datetime
-import random
-from alpha_new.db.ops import get_valid_users
+import typer
+
+from alpha_new.db.models import init_db
+from alpha_new.db.ops import get_all_user_ids, get_valid_users
+from alpha_new.utils import get_cli_logger
 
 logger = get_cli_logger()
 
 QUERY_LOG_PATH = "logs/last_user_query_time.log"
+
 
 def save_last_query_time():
     os.makedirs("logs", exist_ok=True)
     with open(QUERY_LOG_PATH, "w", encoding="utf-8") as f:
         f.write(datetime.now().strftime("%Y-%m-%d %H:%M:%S"))
 
+
 def get_last_query_time():
     try:
-        with open(QUERY_LOG_PATH, "r", encoding="utf-8") as f:
+        with open(QUERY_LOG_PATH, encoding="utf-8") as f:
             return f.read().strip()
     except Exception:
         return "-"
+
 
 def get_airdrop_config_info():
     try:
@@ -38,26 +41,30 @@ def get_airdrop_config_info():
         second = config.get("target_second", "-")
         min_score = config.get("min_score", "-")
         return token_symbol, f"{hour:02}:{minute:02}:{second:02}", min_score
-    except Exception as e:
+    except Exception:
         return "-", "-", "-"
+
 
 def show_main_menu():
     # 只显示主菜单，不再自动更新用户信息
     token_symbol, time_str, min_score = get_airdrop_config_info()
     last_query_time = get_last_query_time()
     from shutil import get_terminal_size
+
     width = get_terminal_size((80, 20)).columns
     line = "-" * min(60, width)
     # 新增：统计数据库用户数和有效登录数
-    import asyncio
     from sqlalchemy.ext.asyncio import async_sessionmaker
+
     from alpha_new.db.models import init_db
     from alpha_new.db.ops import get_user_login_status_stats
+
     async def get_stats():
         engine = await init_db("sqlite+aiosqlite:///data/alpha_users.db")
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         async with async_session() as session:
             return await get_user_login_status_stats(session)
+
     try:
         total_users, valid_users = asyncio.run(get_stats())
         stats_line = f"[bold]总用户:[/bold] {total_users}    [bold green]有效登录:[/bold green] {valid_users}"
@@ -78,6 +85,7 @@ def show_main_menu():
     table.add_row("2", "交易管理")
     console.print(table)
 
+
 def show_user_menu():
     table = Table(title="用户查询", show_lines=True)
     table.add_column("序号", justify="center")
@@ -85,6 +93,7 @@ def show_user_menu():
     table.add_row("0", "返回主菜单")
     table.add_row("q", "退出")
     console.print(table)
+
 
 def show_airdrop_menu():
     table = Table(title="空投管理", show_lines=True)
@@ -97,6 +106,7 @@ def show_airdrop_menu():
     table.add_row("0", "返回主菜单")
     console.print(table)
 
+
 def show_trade_menu():
     table = Table(title="交易管理", show_lines=True)
     table.add_column("序号", justify="center")
@@ -107,14 +117,16 @@ def show_trade_menu():
     table.add_row("0", "返回主菜单")
     console.print(table)
 
+
 app = typer.Typer(help="Alpha Tools 命令行工具")
 console = Console()
 
+
 def pick_random_valid_user_id():
-    import asyncio
     from sqlalchemy.ext.asyncio import async_sessionmaker
+
     from alpha_new.db.models import init_db
-    from alpha_new.db.ops import get_valid_users
+
     async def _pick():
         engine = await init_db("sqlite+aiosqlite:///data/alpha_users.db")
         async_session = async_sessionmaker(engine, expire_on_commit=False)
@@ -123,23 +135,28 @@ def pick_random_valid_user_id():
             if not users:
                 return None
             import random
+
             return random.choice(users).id
+
     return asyncio.run(_pick())
+
 
 @app.command()
 def main():
     # 程序启动时自动并发更新一次所有用户信息
-    from alpha_new.db.models import init_db
-    from alpha_new.db.ops import get_all_user_ids
-    from sqlalchemy.ext.asyncio import async_sessionmaker
-    from alpha_new.scripts.update_user_info import main as update_main
     import asyncio
+
+    from sqlalchemy.ext.asyncio import async_sessionmaker
+
+    from alpha_new.scripts.update_user_info import main as update_main
+
     async def update_all_users_concurrent():
         engine = await init_db("sqlite+aiosqlite:///data/alpha_users.db")
         async_session = async_sessionmaker(engine, expire_on_commit=False)
         async with async_session() as session:
             user_ids = await get_all_user_ids(session)
         logger.info(f"自动检测到用户: {user_ids}，开始并发更新...")
+
         async def update_one(uid):
             max_retries = 3
             for attempt in range(1, max_retries + 1):
@@ -149,13 +166,16 @@ def main():
                 except Exception as e:
                     if attempt == max_retries:
                         return str(e)
+            return None
+
         results = await asyncio.gather(*(update_one(uid) for uid in user_ids))
-        for uid, result in zip(user_ids, results):
+        for uid, result in zip(user_ids, results, strict=False):
             if result is True:
                 logger.info(f"用户 {uid} 信息已更新。")
             else:
                 logger.error(f"用户 {uid} 更新失败: {result}")
         save_last_query_time()
+
     asyncio.run(update_all_users_concurrent())
     # 主循环
     while True:
@@ -167,53 +187,94 @@ def main():
         if choice == "1":
             while True:
                 show_airdrop_menu()
-                airdrop_choice = Prompt.ask("请选择空投功能", choices=["1", "2", "3", "4", "0", "q"], default="0")
+                airdrop_choice = Prompt.ask(
+                    "请选择空投功能",
+                    choices=["1", "2", "3", "4", "0", "q"],
+                    default="0",
+                )
                 if airdrop_choice == "1":
                     user_id = pick_random_valid_user_id()
                     if not user_id:
                         console.print("[red]没有有效用户可用于查询空投列表！[/red]")
                         break
                     from alpha_new.scripts.query_airdrop_list import main as query_main
+
                     asyncio.run(query_main(int(user_id)))
-                    console.print(Panel("[green]空投列表查询完成，返回空投管理菜单。[/green]", title="空投列表"))
+                    console.print(
+                        Panel(
+                            "[green]空投列表查询完成，返回空投管理菜单。[/green]",
+                            title="空投列表",
+                        )
+                    )
                     break
-                elif airdrop_choice == "2":
-                    from alpha_new.scripts.semi_auto_claim_airdrop import main as claim_main
+                if airdrop_choice == "2":
+                    from alpha_new.scripts.semi_auto_claim_airdrop import (
+                        main as claim_main,
+                    )
+
                     asyncio.run(claim_main())
-                    console.print(Panel("[green]半自动定时领取流程已执行完毕。返回空投管理菜单。[/green]", title="半自动定时领取"))
+                    console.print(
+                        Panel(
+                            "[green]半自动定时领取流程已执行完毕。返回空投管理菜单。[/green]",
+                            title="半自动定时领取",
+                        )
+                    )
                     break
-                elif airdrop_choice == "3":
-                    from alpha_new.scripts.auto_claim_airdrop import main as auto_claim_main
+                if airdrop_choice == "3":
+                    from alpha_new.scripts.auto_claim_airdrop import (
+                        main as auto_claim_main,
+                    )
+
                     asyncio.run(auto_claim_main())
-                    console.print(Panel("[green]全自动领取流程已执行完毕。返回空投管理菜单。[/green]", title="全自动领取"))
+                    console.print(
+                        Panel(
+                            "[green]全自动领取流程已执行完毕。返回空投管理菜单。[/green]",
+                            title="全自动领取",
+                        )
+                    )
                     break
-                elif airdrop_choice == "4":
-                    from alpha_new.scripts.skiplist_auto_claim_airdrop import main as skiplist_claim_main
+                if airdrop_choice == "4":
+                    from alpha_new.scripts.skiplist_auto_claim_airdrop import (
+                        main as skiplist_claim_main,
+                    )
+
                     asyncio.run(skiplist_claim_main())
-                    console.print(Panel("[green]跳过名单领取流程已执行完毕。返回空投管理菜单。[/green]", title="跳过名单领取空投"))
+                    console.print(
+                        Panel(
+                            "[green]跳过名单领取流程已执行完毕。返回空投管理菜单。[/green]",
+                            title="跳过名单领取空投",
+                        )
+                    )
                     break
-                elif airdrop_choice == "0":
+                if airdrop_choice == "0":
                     break
-                elif airdrop_choice == "q":
-                    console.print(Panel("[cyan]感谢使用 Alpha Tools！[/cyan]", title="退出"))
+                if airdrop_choice == "q":
+                    console.print(
+                        Panel("[cyan]感谢使用 Alpha Tools！[/cyan]", title="退出")
+                    )
                     raise typer.Exit()
         elif choice == "2":
             while True:
                 show_trade_menu()
-                trade_choice = Prompt.ask("请选择交易功能", choices=["1", "2", "3", "0", "q"], default="0")
+                trade_choice = Prompt.ask(
+                    "请选择交易功能", choices=["1", "2", "3", "0", "q"], default="0"
+                )
                 if trade_choice == "1":
                     user_id = pick_random_valid_user_id()
                     if not user_id:
                         console.print("[red]没有有效用户可用于查询代币信息！[/red]")
                         break
-                    from alpha_new.scripts.export_token_info import main as export_token_info_main
                     import json
-                    import rich
+
+                    from alpha_new.scripts.export_token_info import (
+                        main as export_token_info_main,
+                    )
+
                     asyncio.run(export_token_info_main(user_id))
                     from rich.table import Table
-                    from rich.console import Console
+
                     try:
-                        with open("data/token_info.json", "r", encoding="utf-8") as f:
+                        with open("data/token_info.json", encoding="utf-8") as f:
                             tokens = json.load(f)
                         table = Table(title="代币信息列表")
                         table.add_column("简称", justify="left")
@@ -222,30 +283,58 @@ def main():
                         table.add_column("链", justify="left")
                         table.add_column("精度", justify="right")
                         for t in tokens:
-                            table.add_row(t.get("symbol", ""), t.get("fullName", t.get("name", "")), t.get("contractAddress", ""), t.get("chainName", ""), str(t.get("decimals", "")))
+                            table.add_row(
+                                t.get("symbol", ""),
+                                t.get("fullName", t.get("name", "")),
+                                t.get("contractAddress", ""),
+                                t.get("chainName", ""),
+                                str(t.get("decimals", "")),
+                            )
                         console.print(table)
                     except Exception as e:
                         console.print(f"[red]读取代币信息失败: {e}[/red]")
-                    console.print(Panel("[green]代币信息查询已完成，返回交易管理菜单。[/green]", title="代币信息查询"))
+                    console.print(
+                        Panel(
+                            "[green]代币信息查询已完成，返回交易管理菜单。[/green]",
+                            title="代币信息查询",
+                        )
+                    )
                     break
-                elif trade_choice == "2":
-                    from alpha_new.scripts.get_order_history_stats import main as order_stats_main
+                if trade_choice == "2":
+                    from alpha_new.scripts.get_order_history_stats import (
+                        main as order_stats_main,
+                    )
+
                     asyncio.run(order_stats_main())
-                    console.print(Panel("[green]订单统计已完成，返回交易管理菜单。[/green]", title="订单历史查询"))
+                    console.print(
+                        Panel(
+                            "[green]订单统计已完成，返回交易管理菜单。[/green]",
+                            title="订单历史查询",
+                        )
+                    )
                     break
-                elif trade_choice == "3":
+                if trade_choice == "3":
                     from alpha_new.scripts.auto_trader import main as auto_trader_main
+
                     asyncio.run(auto_trader_main())
-                    console.print(Panel("[green]自动交易已启动并执行完毕，返回交易管理菜单。[/green]", title="自动交易"))
+                    console.print(
+                        Panel(
+                            "[green]自动交易已启动并执行完毕，返回交易管理菜单。[/green]",
+                            title="自动交易",
+                        )
+                    )
                     break
-                elif trade_choice == "0":
+                if trade_choice == "0":
                     break
-                elif trade_choice == "q":
-                    console.print(Panel("[cyan]感谢使用 Alpha Tools！[/cyan]", title="退出"))
+                if trade_choice == "q":
+                    console.print(
+                        Panel("[cyan]感谢使用 Alpha Tools！[/cyan]", title="退出")
+                    )
                     raise typer.Exit()
         elif choice == "q":
             console.print(Panel("[cyan]感谢使用 Alpha Tools！[/cyan]", title="退出"))
             raise typer.Exit()
 
+
 if __name__ == "__main__":
-    app() 
+    app()

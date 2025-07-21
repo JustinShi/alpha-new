@@ -1,13 +1,13 @@
 import asyncio
 import json
-import websockets
-import httpx
 import logging
-import time
-from typing import Optional
+
+import httpx
+import websockets
 
 ORDER_WS_URL = "wss://nbstream.binance.com/w3w/stream"
 PRICE_WS_URL = "wss://nbstream.binance.com/w3w/wsa/stream"
+
 
 class BinanceWebSocket:
     def __init__(self):
@@ -29,7 +29,7 @@ class BinanceWebSocket:
         self._retry_interval = 5  # 秒
         self._ping_interval = 20  # 秒
 
-    async def get_listen_key(self, headers: dict, cookies: Optional[dict] = None) -> str:
+    async def get_listen_key(self, headers: dict, cookies: dict | None = None) -> str:
         """使用移动端认证获取listenKey"""
         try:
             async with httpx.AsyncClient() as client:
@@ -37,17 +37,16 @@ class BinanceWebSocket:
                     "https://www.binance.com/bapi/defi/v1/private/alpha-trade/get-listen-key",
                     headers=headers,
                     cookies=cookies if cookies else {},
-                    json={}
+                    json={},
                 )
                 result = response.json()
                 if result.get("success"):
                     return result["data"]
-                else:
-                    raise Exception(f"获取listenKey失败: {result}")
+                raise Exception(f"获取listenKey失败: {result}")
         except Exception as e:
             raise Exception(f"获取listenKey异常: {e}")
 
-    async def refresh_listen_key(self, headers: dict, cookies: Optional[dict] = None):
+    async def refresh_listen_key(self, headers: dict, cookies: dict | None = None):
         """刷新listenKey（每30分钟）"""
         while self._running:
             try:
@@ -69,7 +68,9 @@ class BinanceWebSocket:
                 self._logger.warning(f"[ws][{ws_type}] 心跳ping异常: {e}")
                 break
 
-    async def _ws_connect_with_retry(self, url, ws_type, subscribe_func, *args, **kwargs):
+    async def _ws_connect_with_retry(
+        self, url, ws_type, subscribe_func, *args, **kwargs
+    ):
         retry = 0
         while not self._stop_event.is_set():
             try:
@@ -87,55 +88,68 @@ class BinanceWebSocket:
                 if retry > self._max_retries:
                     self._logger.error(f"[ws][{ws_type}] 重试超限，放弃重连")
                     break
-                self._logger.info(f"[ws][{ws_type}] {self._retry_interval}秒后重试第{retry}次...")
+                self._logger.info(
+                    f"[ws][{ws_type}] {self._retry_interval}秒后重试第{retry}次..."
+                )
                 await asyncio.sleep(self._retry_interval)
 
-    async def subscribe_order(self, headers: dict, cookies: Optional[dict] = None):
+    async def subscribe_order(self, headers: dict, cookies: dict | None = None):
         """订阅订单推送，自动获取listenKey，支持自动重连"""
         self._running = True
         self._reconnect_attempts = 0
-        
+
         while self._running and self._reconnect_attempts < self._max_reconnect_attempts:
             try:
                 await self._subscribe_order_internal(headers, cookies)
-            except Exception as e:
+            except Exception:
                 self._reconnect_attempts += 1
                 if self._reconnect_attempts >= self._max_reconnect_attempts:
-                    print(f"订单推送重连失败，已达到最大重试次数: {self._max_reconnect_attempts}")
+                    print(
+                        f"订单推送重连失败，已达到最大重试次数: {self._max_reconnect_attempts}"
+                    )
                     break
-                
+
                 # 计算重连延迟（指数退避）
-                delay = min(self._base_reconnect_delay * (2 ** (self._reconnect_attempts - 1)), self._max_reconnect_delay)
-                print(f"订单推送连接断开，{delay}秒后尝试重连 (第{self._reconnect_attempts}次)...")
+                delay = min(
+                    self._base_reconnect_delay * (2 ** (self._reconnect_attempts - 1)),
+                    self._max_reconnect_delay,
+                )
+                print(
+                    f"订单推送连接断开，{delay}秒后尝试重连 (第{self._reconnect_attempts}次)..."
+                )
                 await asyncio.sleep(delay)
-        
+
         # 清理资源
         if self._listen_key_task:
             self._listen_key_task.cancel()
-    
-    async def _subscribe_order_internal(self, headers: dict, cookies: Optional[dict] = None):
+
+    async def _subscribe_order_internal(
+        self, headers: dict, cookies: dict | None = None
+    ):
         """内部订单订阅方法"""
         # 获取初始listenKey
         self._listen_key = await self.get_listen_key(headers, cookies)
         print(f"获取listenKey: {self._listen_key[:20]}...")
-        
+
         # 启动listenKey刷新任务
         self._listen_key_task = asyncio.create_task(
             self.refresh_listen_key(headers, cookies)
         )
-        
+
         async def subscribe(ws, headers, cookies):
-            sub_msg = json.dumps({
-                "method": "SUBSCRIBE", 
-                "params": [f"alpha@{self._listen_key}"], 
-                "id": 3
-            })
+            sub_msg = json.dumps(
+                {
+                    "method": "SUBSCRIBE",
+                    "params": [f"alpha@{self._listen_key}"],
+                    "id": 3,
+                }
+            )
             await ws.send(sub_msg)
             print(f"已订阅订单推送: alpha@{self._listen_key[:20]}...")
-            
+
             # 重置重连计数
             self._reconnect_attempts = 0
-            
+
             while self._running:
                 try:
                     msg = await ws.recv()
@@ -147,41 +161,50 @@ class BinanceWebSocket:
                 except Exception as e:
                     print(f"订单推送异常: {e}")
                     raise  # 抛出异常触发重连
-        await self._ws_connect_with_retry(ORDER_WS_URL, "order", subscribe, headers, cookies)
+
+        await self._ws_connect_with_retry(
+            ORDER_WS_URL, "order", subscribe, headers, cookies
+        )
 
     async def subscribe_price(self, price_stream: str):
         """订阅价格推送 came@合约@链@kline_1s，支持自动重连"""
         self._running = True
         self._reconnect_attempts = 0
-        
+
         while self._running and self._reconnect_attempts < self._max_reconnect_attempts:
             try:
                 await self._subscribe_price_internal(price_stream)
-            except Exception as e:
+            except Exception:
                 self._reconnect_attempts += 1
                 if self._reconnect_attempts >= self._max_reconnect_attempts:
-                    print(f"价格推送重连失败，已达到最大重试次数: {self._max_reconnect_attempts}")
+                    print(
+                        f"价格推送重连失败，已达到最大重试次数: {self._max_reconnect_attempts}"
+                    )
                     break
-                
+
                 # 计算重连延迟（指数退避）
-                delay = min(self._base_reconnect_delay * (2 ** (self._reconnect_attempts - 1)), self._max_reconnect_delay)
-                print(f"价格推送连接断开，{delay}秒后尝试重连 (第{self._reconnect_attempts}次)...")
+                delay = min(
+                    self._base_reconnect_delay * (2 ** (self._reconnect_attempts - 1)),
+                    self._max_reconnect_delay,
+                )
+                print(
+                    f"价格推送连接断开，{delay}秒后尝试重连 (第{self._reconnect_attempts}次)..."
+                )
                 await asyncio.sleep(delay)
-    
+
     async def _subscribe_price_internal(self, price_stream: str):
         """内部价格订阅方法"""
+
         async def subscribe(ws, price_stream):
-            sub_msg = json.dumps({
-                "method": "SUBSCRIBE", 
-                "params": [price_stream], 
-                "id": 4
-            })
+            sub_msg = json.dumps(
+                {"method": "SUBSCRIBE", "params": [price_stream], "id": 4}
+            )
             await ws.send(sub_msg)
             print(f"已订阅价格推送: {price_stream}")
-            
+
             # 重置重连计数
             self._reconnect_attempts = 0
-            
+
             while self._running:
                 try:
                     msg = await ws.recv()
@@ -193,7 +216,10 @@ class BinanceWebSocket:
                 except Exception as e:
                     print(f"价格推送异常: {e}")
                     raise  # 抛出异常触发重连
-        await self._ws_connect_with_retry(PRICE_WS_URL, "price", subscribe, price_stream)
+
+        await self._ws_connect_with_retry(
+            PRICE_WS_URL, "price", subscribe, price_stream
+        )
 
     def stop(self):
         """停止所有WebSocket连接"""
@@ -204,6 +230,6 @@ class BinanceWebSocket:
             self._listen_key_task.cancel()
 
     @property
-    def listen_key(self) -> Optional[str]:
+    def listen_key(self) -> str | None:
         """获取当前listenKey"""
-        return self._listen_key 
+        return self._listen_key

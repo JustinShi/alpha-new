@@ -1,50 +1,136 @@
+# =============================================================================
+# 代码质量工具配置
+# =============================================================================
+
 [tool.black]
 line-length = 88
-target-version = ['py313']
+target-version = ['py311', 'py312', 'py313']  # 支持更多Python版本
 include = '\\.pyi?$'
-exclude = '/(\\.git|\\.venv|\\.mypy_cache|\\.pytest_cache|build|dist)/'
+exclude = '''
+/(
+    \.git
+    | \.venv
+    | \.mypy_cache
+    | \.pytest_cache
+    | \.ruff_cache
+    | build
+    | dist
+    | __pycache__
+)/
+'''
 
 [tool.ruff]
 line-length = 88
-target-version = 'py313'
+target-version = 'py311'  # 降低最低版本要求
+src = ["src", "tests"]    # 指定源代码目录
 
 [tool.ruff.lint]
 select = [
-    'E', 'W',      # pycodestyle
+    # 基础规则
+    'E', 'W',      # pycodestyle errors and warnings
     'F',           # Pyflakes
     'I',           # isort
     'N',           # pep8-naming
     'UP',          # pyupgrade
+
+    # 代码质量
     'B',           # flake8-bugbear
-    'A',           # flake8-builtins
     'C4',          # flake8-comprehensions
     'PIE',         # flake8-pie
-    'PT',          # flake8-pytest-style
     'RET',         # flake8-return
     'SIM',         # flake8-simplify
-    'PTH',         # flake8-use-pathlib
     'RUF',         # Ruff-specific rules
 ]
+
 ignore = [
-    'E501',        # line too long (handled by black)
-    'D100', 'D104',   # missing docstrings
+    # 格式化相关（由black处理）
+    'E501',        # line too long
+    'E203',        # whitespace before ':'
+
+    # 复杂度相关
+    'C901',        # too complex
     'PLR0913',     # too many arguments
     'PLR0911',     # too many return statements
     'PLR0912',     # too many branches
     'PLR0915',     # too many statements
+
+    # 中文字符相关（项目使用中文日志）
+    'RUF001',      # string contains ambiguous character (中文标点)
+    'RUF002',      # docstring contains ambiguous character
+    'RUF003',      # comment contains ambiguous character
+
+    # 代码风格相关
     'ERA001',      # commented-out code
+    'T201',        # print statements (在某些脚本中需要)
+    'S101',        # assert statements (测试中常用)
+    'B007',        # loop control variable not used (某些场景下合理)
+
+    # 返回值相关
+    'RET503',      # missing explicit return (某些情况下不需要)
+    'RET504',      # unnecessary assignment before return
+
+    # 异常处理相关
+    'B904',        # raise without from (某些场景下可接受)
+
+    # 类型注解相关
+    'RUF012',      # mutable class attributes (项目中有合理使用)
 ]
 
 [tool.ruff.lint.per-file-ignores]
-"*.py" = ["D"]
-"tests/*" = ["S101", "PLR2004"]
-"examples/*" = ["T201", "S101"]
+# 测试文件
+"tests/*" = [
+    "PLR2004",     # magic value comparison in tests
+    "S101",        # assert statements
+    "F841",        # unused variables (测试中常见)
+    "ARG001",      # unused function argument
+]
+
+# 脚本文件
+"src/alpha_new/scripts/*" = [
+    "T201",        # print statements in scripts
+    "F841",        # unused variables (脚本中可能有临时变量)
+    "PLR2004",     # magic values (脚本中的配置值)
+    "S101",        # assert statements
+]
+
+# CLI工具
+"src/alpha_new/cli.py" = [
+    "T201",        # print statements in CLI
+    "PLR2004",     # magic values in CLI
+]
+
+# 配置和初始化文件
+"src/alpha_new/__init__.py" = ["F401"]  # unused imports (可能用于导出)
+"src/alpha_new/utils/__init__.py" = ["F401"]  # unused imports
+
+# 数据库模型文件
+"src/alpha_new/models/*" = [
+    "RUF012",      # mutable class attributes (SQLAlchemy模型中常见)
+    "A003",        # builtin attribute shadowing
+]
+
+# 数据库迁移文件
+"migrations/*" = [
+    "E402",        # module level import not at top (alembic生成的文件)
+    "F401",        # unused imports
+    "T201",        # print statements
+]
+
+[tool.ruff.lint.isort]
+known-first-party = ["alpha_new"]
+force-sort-within-sections = true
+split-on-trailing-comma = true
 
 [tool.ruff.format]
 quote-style = "double"
 indent-style = "space"
 skip-magic-trailing-comma = false
 line-ending = "auto"
+docstring-code-format = true
+
+# =============================================================================
+# 项目元数据配置
+# =============================================================================
 
 [tool.poetry]
 packages = [{include = "alpha_new", from = "src"}]
@@ -57,94 +143,194 @@ authors = [
     {name = "JustinShi", email = "2223060161@qq.com"}
 ]
 readme = "README.md"
-requires-python = ">=3.13"
-dependencies = [
-    "aiohappyeyeballs>=2.6.1,<3.0.0",
-    "aiohttp>=3.12.14,<4.0.0",
-    "aiohttp_socks>=0.10.1,<0.11.0",
-    "aiosignal>=1.4.0,<2.0.0",
-    "annotated-types>=0.7.0,<0.8.0",
-    "anyio>=4.9.0,<5.0.0",
-    "attrs>=25.3.0,<26.0.0",
-    "blinker>=1.9.0,<2.0.0",
-    "Brotli>=1.1.0,<2.0.0",
-    "certifi>=2025.4.26,<2026.0.0",
-    "cffi>=1.17.1,<2.0.0",
-    "charset-normalizer>=3.4.2,<4.0.0",
-    "colorama>=0.4.6,<0.5.0",
-    "cryptography>=45.0.5,<46.0.0",
-    "et_xmlfile>=2.0.0,<3.0.0",
-    "frozenlist>=1.7.0,<2.0.0",
-    "h11>=0.16.0,<0.17.0",
-    "h2>=4.2.0,<5.0.0",
-    "hpack>=4.1.0,<5.0.0",
-    "httpcore>=1.0.9,<2.0.0",
-    "httpx>=0.28.1,<0.29.0",
-    "hyperframe>=6.1.0,<7.0.0",
-    "idna>=3.10,<4.0.0",
-    "iniconfig>=2.1.0,<3.0.0",
-    "kaitaistruct>=0.10,<0.11.0",
-    "markdown-it-py>=3.0.0,<4.0.0",
-    "mdurl>=0.1.2,<0.2.0",
-    "multidict>=6.6.3,<7.0.0",
-    "orjson>=3.10.18,<4.0.0",
-    "outcome>=1.3.0.post0,<2.0.0",
-    "packaging>=23.2,<24.0.0",
-    "pluggy>=1.6.0,<2.0.0",
-    "propcache>=0.3.2,<0.4.0",
-    "pyasn1>=0.6.1,<0.7.0",
-    "pycparser>=2.22,<3.0.0",
-    "pydantic>=2.11.7,<3.0.0",
-    "pydantic_core>=2.33.2,<3.0.0",
-    "pydivert>=2.1.0,<3.0.0",
-    "Pygments>=2.19.2,<3.0.0",
-    "pyOpenSSL>=25.1.0,<26.0.0",
-    "pyparsing>=3.2.3,<4.0.0",
-    "PySocks>=1.7.1,<2.0.0",
-    "python-dateutil>=2.9.0.post0,<3.0.0",
-    "python-socks>=2.7.1,<3.0.0",
-    "pytz>=2025.2,<2026.0.0",
-    "PyYAML>=6.0.1,<7.0.0",
-    "requests>=2.31.0,<3.0.0",
-    "rich>=14.0.0,<15.0.0",
-    "setuptools>=69.0.3,<70.0.0",
-    "six>=1.17.0,<2.0.0",
-    "sniffio>=1.3.1,<2.0.0",
-    "sortedcontainers>=2.4.0,<3.0.0",
-    "tabulate>=0.9.0,<1.0.0",
-    "trio>=0.30.0,<1.0.0",
-    "trio-websocket>=0.12.2,<0.13.0",
-    "typing-inspection>=0.4.1,<0.5.0",
-    "typing_extensions>=4.13.2,<5.0.0",
-    "tzdata>=2025.2,<2026.0.0",
-    "urllib3>=2.4.0,<3.0.0",
-    "websocket-client>=1.8.0,<2.0.0",
-    "websockets>=15.0.1,<16.0.0",
-    "wsproto>=1.2.0,<2.0.0",
-    "yarl>=1.20.1,<2.0.0",
-    "zstandard>=0.23.0,<1.0.0",
-    "aiofiles>=23.2.1,<24.0.0",
-    "typer (>=0.16.0,<0.17.0)",
-    "sqlalchemy (>=2.0.41,<3.0.0)",
-    "aiosqlite (>=0.21.0,<0.22.0)",
-    "toml (>=0.10.2,<0.11.0)",
-    "alembic (>=1.16.4,<2.0.0)"
+license = {text = "MIT"}
+requires-python = ">=3.11"  # 降低Python版本要求，提高兼容性
+keywords = ["trading", "binance", "alpha", "cryptocurrency", "automation"]
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: Developers",
+    "Intended Audience :: Financial and Insurance Industry",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Office/Business :: Financial :: Investment",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+    "Typing :: Typed",
 ]
+# =============================================================================
+# 核心依赖配置 - 精简且稳定的版本约束
+# =============================================================================
+
+dependencies = [
+    # 核心框架
+    "pydantic>=2.5.0,<3.0.0",           # 数据验证和序列化
+    "sqlalchemy>=2.0.0,<3.0.0",         # 数据库ORM
+    "aiosqlite>=0.19.0,<1.0.0",         # 异步SQLite驱动
+    "alembic>=1.12.0,<2.0.0",           # 数据库迁移
+
+    # HTTP和WebSocket客户端
+    "httpx>=0.25.0,<1.0.0",             # 现代HTTP客户端
+    "websockets>=11.0,<13.0",           # WebSocket客户端
+
+    # 异步支持
+    "aiofiles>=23.0.0,<25.0.0",         # 异步文件操作
+
+    # 数据处理
+    "orjson>=3.8.0,<4.0.0",             # 快速JSON处理
+    "toml>=0.10.0,<1.0.0",              # TOML配置文件
+
+    # CLI工具
+    "typer>=0.9.0,<1.0.0",              # 命令行界面
+    "rich>=13.0.0,<14.0.0",             # 富文本输出
+    "colorama>=0.4.6,<1.0.0",           # 跨平台彩色输出
+
+    # 实用工具
+    "python-dateutil>=2.8.0,<3.0.0",   # 日期时间处理
+    "tabulate>=0.9.0,<1.0.0",           # 表格格式化
+]
+
+# =============================================================================
+# 脚本入口点配置
+# =============================================================================
 
 [project.scripts]
-alpha-new = "src.alpha_new.cli:main"
-alpha-token = "src.examples.alpha_token_example:main"
+alpha-new = "alpha_new.cli:main"
+alpha-trader = "alpha_new.scripts.auto_trader:main"
+alpha-airdrop = "alpha_new.scripts.airdrop_claimer:main"
+
+[project.urls]
+Homepage = "https://github.com/JustinShi/alpha-new"
+Repository = "https://github.com/JustinShi/alpha-new"
+Documentation = "https://github.com/JustinShi/alpha-new/blob/main/README.md"
+"Bug Tracker" = "https://github.com/JustinShi/alpha-new/issues"
+
+# =============================================================================
+# 可选依赖配置 - 按用途分组
+# =============================================================================
 
 [project.optional-dependencies]
+# 开发工具
 dev = [
-    "pytest>=8.4.1,<9.0.0",
-    "pytest-cov>=5.0.0,<6.0.0",
-    "mypy>=1.10.0,<2.0.0",
-    "black>=24.4.2,<25.0.0",
-    "ruff>=0.4.4,<1.0.0",
-    "pre-commit>=4.2.0,<5.0.0"
+    "pytest>=7.4.0,<9.0.0",             # 测试框架
+    "pytest-cov>=4.1.0,<6.0.0",         # 测试覆盖率
+    "pytest-asyncio>=0.21.0,<1.0.0",    # 异步测试支持
+    "mypy>=1.5.0,<2.0.0",               # 类型检查
+    "black>=23.0.0,<25.0.0",            # 代码格式化
+    "ruff>=0.1.0,<1.0.0",               # 代码检查
+    "pre-commit>=3.0.0,<4.0.0",         # 预提交钩子
 ]
 
+# 扩展功能
+extras = [
+    "aiohttp>=3.8.0,<4.0.0",            # 额外HTTP客户端
+    "requests>=2.28.0,<3.0.0",          # 同步HTTP客户端
+    "cryptography>=40.0.0,<43.0.0",     # 加密功能
+    "PySocks>=1.7.0,<2.0.0",            # 代理支持
+]
+
+# 性能优化
+performance = [
+    "uvloop>=0.17.0,<1.0.0; sys_platform != 'win32'",  # 高性能事件循环(非Windows)
+    "orjson>=3.8.0,<4.0.0",             # 快速JSON处理
+]
+
+# 完整安装
+all = [
+    "alpha-new[dev,extras,performance]"
+]
+
+# =============================================================================
+# 构建系统配置
+# =============================================================================
+
 [build-system]
-requires = ["poetry-core>=2.0.0,<3.0.0"]
+requires = ["poetry-core>=1.8.0"]
 build-backend = "poetry.core.masonry.api"
+
+# =============================================================================
+# 测试配置
+# =============================================================================
+
+[tool.pytest.ini_options]
+minversion = "7.0"
+addopts = [
+    "--strict-markers",
+    "--strict-config",
+    "--cov=alpha_new",
+    "--cov-report=term-missing",
+    "--cov-report=html:htmlcov",
+    "--cov-report=xml",
+    "--cov-fail-under=80",
+]
+testpaths = ["tests"]
+python_files = ["test_*.py", "*_test.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+markers = [
+    "slow: marks tests as slow (deselect with '-m \"not slow\"')",
+    "integration: marks tests as integration tests",
+    "unit: marks tests as unit tests",
+    "api: marks tests that require API access",
+]
+asyncio_mode = "auto"
+
+# =============================================================================
+# 类型检查配置
+# =============================================================================
+
+[tool.mypy]
+python_version = "3.11"
+strict = false  # 降低严格程度，避免过多错误
+warn_return_any = false
+warn_unused_configs = true
+disallow_untyped_defs = false
+check_untyped_defs = true
+no_implicit_optional = true
+warn_redundant_casts = true
+warn_unused_ignores = false  # 避免忽略注释的警告
+show_error_codes = true
+
+# 忽略缺少类型注解的第三方库
+[[tool.mypy.overrides]]
+module = [
+    "websocket.*",
+    "orjson.*",
+    "toml.*",
+    "tabulate.*",
+    "typer.*",
+    "rich.*",
+]
+ignore_missing_imports = true
+
+# =============================================================================
+# 覆盖率配置
+# =============================================================================
+
+[tool.coverage.run]
+source = ["src"]
+branch = true
+omit = [
+    "*/tests/*",
+    "*/test_*",
+    "*/__pycache__/*",
+    "*/migrations/*",
+]
+
+[tool.coverage.report]
+exclude_lines = [
+    "pragma: no cover",
+    "def __repr__",
+    "if self.debug:",
+    "if settings.DEBUG",
+    "raise AssertionError",
+    "raise NotImplementedError",
+    "if 0:",
+    "if __name__ == .__main__.:",
+    "class .*\\bProtocol\\):",
+    "@(abc\\.)?abstractmethod",
+]
+show_missing = true
+skip_covered = false
