@@ -67,7 +67,7 @@ class ManagedWebSocket:
         self._quality_degradation_threshold = 50.0  # 质量降级阈值
 
         # 连接备份和故障转移
-        self._backup_connections = []
+        self._backup_connections: list[Any] = []
         self._primary_connection_failed = False
         self._failover_enabled = True
 
@@ -401,15 +401,15 @@ class CircuitBreaker:
         """检查是否可以执行连接"""
         if self.state == CircuitBreakerState.CLOSED:
             return True
-        elif self.state == CircuitBreakerState.OPEN:
+        if self.state == CircuitBreakerState.OPEN:
             # 检查是否可以进入半开状态
             if time.time() - self.last_failure_time > self.config.recovery_timeout:
                 self.state = CircuitBreakerState.HALF_OPEN
                 self.success_count = 0
                 return True
             return False
-        else:  # HALF_OPEN
-            return True
+        # HALF_OPEN
+        return True
 
     def record_success(self):
         """记录成功"""
@@ -426,7 +426,7 @@ class CircuitBreaker:
 
     def record_failure(self):
         """记录失败"""
-        self.last_failure_time = time.time()
+        self.last_failure_time = int(time.time())
         self.failure_count += 1
 
         if self.state == CircuitBreakerState.CLOSED:

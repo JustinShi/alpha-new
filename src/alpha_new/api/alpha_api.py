@@ -1,4 +1,5 @@
 import asyncio
+import contextlib
 from typing import Any
 
 import httpx
@@ -31,8 +32,8 @@ class AlphaAPI:
         )
         return await get_http_client(
             client_id=client_id,
-            base_url=BINANCE_CLIENT_CONFIG["base_url"],
-            timeout=BINANCE_CLIENT_CONFIG["timeout"],
+            base_url=str(BINANCE_CLIENT_CONFIG["base_url"]),
+            timeout=float(BINANCE_CLIENT_CONFIG["timeout"]),
         )
 
     async def close(self):
@@ -97,10 +98,8 @@ class AlphaAPI:
             ):
                 logger.warning(f"{user_prefix}检测到连接问题，清理HTTP客户端")
                 if hasattr(self, "_client") and self._client:
-                    try:
+                    with contextlib.suppress(Exception):
                         await self._client.aclose()
-                    except:
-                        pass
                     self._client = None
             raise
 
@@ -207,7 +206,7 @@ class AlphaAPI:
         time_in_force: str = "GTC",
     ) -> Any:
         url = f"{BASE_URL}/bapi/asset/v1/private/alpha-trade/order/place"
-        payload = {
+        payload: dict[str, Any] = {
             "baseAsset": base_asset,
             "quoteAsset": quote_asset,
             "side": side,

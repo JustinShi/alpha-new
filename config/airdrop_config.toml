@@ -11,7 +11,7 @@ target_hour = 4
 #分钟
 target_minute = 0
 #秒
-target_second = 40
+target_second = 0
 
 # 空投积分阈值，只有积分大于等于该值的用户才参与
 min_score = 210

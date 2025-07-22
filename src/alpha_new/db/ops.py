@@ -75,7 +75,7 @@ async def get_valid_users(session: AsyncSession) -> list[User]:
     )
     users = result.scalars().all()
     logger.debug(f"找到{len(users)}个有效用户")
-    return users
+    return list(users)  # type: ignore
 
 
 async def get_users_by_score_range(
@@ -106,7 +106,7 @@ async def get_users_by_score_range(
     users = result.scalars().all()
 
     logger.debug(f"积分范围[{min_score}, {max_score}]找到{len(users)}个用户")
-    return users
+    return list(users)  # type: ignore
 
 
 async def get_users_batch(session: AsyncSession, user_ids: list[int]) -> list[User]:
@@ -130,7 +130,7 @@ async def get_users_batch(session: AsyncSession, user_ids: list[int]) -> list[Us
     users = result.scalars().all()
 
     logger.debug(f"批量查询{len(user_ids)}个用户，找到{len(users)}个")
-    return users
+    return list(users)  # type: ignore
 
 
 async def update_users_batch(
@@ -192,16 +192,28 @@ async def get_user_stats_summary(session: AsyncSession) -> dict:
 
     row = result.first()
 
-    stats = {
-        "total_users": row.total_users or 0,
-        "valid_users": row.valid_users or 0,
-        "invalid_users": row.invalid_users or 0,
-        "unknown_users": row.unknown_users or 0,
-        "avg_score": float(row.avg_score) if row.avg_score else 0.0,
-        "max_score": row.max_score or 0,
-        "min_score": row.min_score or 0,
-        "last_update": row.last_update,
-    }
+    if row is None:
+        stats = {
+            "total_users": 0,
+            "valid_users": 0,
+            "invalid_users": 0,
+            "unknown_users": 0,
+            "avg_score": 0.0,
+            "max_score": 0,
+            "min_score": 0,
+            "last_update": None,
+        }
+    else:
+        stats = {
+            "total_users": row.total_users or 0,
+            "valid_users": row.valid_users or 0,
+            "invalid_users": row.invalid_users or 0,
+            "unknown_users": row.unknown_users or 0,
+            "avg_score": float(row.avg_score) if row.avg_score else 0.0,
+            "max_score": row.max_score or 0,
+            "min_score": row.min_score or 0,
+            "last_update": row.last_update,
+        }
 
     logger.debug(f"用户统计摘要: {stats}")
     return stats

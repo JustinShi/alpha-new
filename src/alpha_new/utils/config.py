@@ -3,6 +3,7 @@
 提供统一的配置加载和管理功能
 """
 
+import contextlib
 from dataclasses import dataclass, field
 import os
 from pathlib import Path
@@ -139,10 +140,7 @@ class ConfigManager:
         Raises:
             ConfigurationError: 配置加载失败
         """
-        if config_path:
-            config_file = Path(config_path)
-        else:
-            config_file = self._find_config_file()
+        config_file = Path(config_path) if config_path else self._find_config_file()
 
         if config_file and config_file.exists():
             try:
@@ -191,10 +189,8 @@ class ConfigManager:
 
         # API配置
         if api_timeout := os.getenv("ALPHA_API_TIMEOUT"):
-            try:
+            with contextlib.suppress(ValueError):
                 self._config.api.timeout = int(api_timeout)
-            except ValueError:
-                pass
 
         # 日志配置
         if log_level := os.getenv("ALPHA_LOG_LEVEL"):

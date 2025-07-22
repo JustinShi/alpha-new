@@ -2,6 +2,7 @@ import asyncio
 from datetime import datetime, timedelta
 from decimal import ROUND_DOWN, Decimal
 import json
+from pathlib import Path
 import signal
 import time
 
@@ -23,6 +24,90 @@ from alpha_new.utils.websocket_manager import ManagedWebSocket, get_websocket_ma
 
 logger = get_api_logger()
 order_data_logger = get_order_data_logger()
+
+
+def load_local_token_mapping(file_path: str = "data/token_info.json") -> dict[str, str]:
+    """
+    从本地JSON文件加载代币映射关系
+
+    Args:
+        file_path: 代币信息文件路径
+
+    Returns:
+        代币符号到alphaId的映射字典，如 {"CROSS": "ALPHA_259"}
+    """
+    try:
+        token_file = Path(file_path)
+        if not token_file.exists():
+            logger.warning(f"本地代币映射文件不存在: {file_path}")
+            return {}
+
+        with open(token_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+
+        # 处理不同的JSON结构
+        tokens = data.get("tokens", []) if isinstance(data, dict) else data
+
+        mapping = {}
+        for token in tokens:
+            symbol = token.get("symbol", "")
+            alpha_id = token.get("alphaId", "")
+            base_asset = token.get("baseAsset", "")
+
+            # 优先使用symbol -> alphaId映射
+            if symbol and alpha_id:
+                mapping[symbol] = alpha_id
+            # 其次使用symbol -> baseAsset映射
+            elif symbol and base_asset:
+                mapping[symbol] = base_asset
+
+        logger.info(f"从本地文件加载了 {len(mapping)} 个代币映射")
+        return mapping
+
+    except Exception as e:
+        logger.error(f"加载本地代币映射失败: {e}")
+        return {}
+
+
+async def fetch_token_mapping_from_api(api: AlphaAPI) -> dict[str, str]:
+    """
+    从API获取代币映射关系（作为本地文件的后备方案）
+
+    Args:
+        api: API客户端
+
+    Returns:
+        代币符号到alphaId的映射字典
+    """
+    try:
+        logger.info("尝试从API获取代币映射...")
+        response = await api.get_token_list()
+
+        if not response.get("success") or response.get("code") != "000000":
+            logger.error(f"API获取代币列表失败: {response}")
+            return {}
+
+        tokens = response.get("data", [])
+        mapping = {}
+
+        for token in tokens:
+            symbol = token.get("symbol", "")
+            alpha_id = token.get("alphaId", "")
+            base_asset = token.get("baseAsset", "")
+
+            # 优先使用symbol -> alphaId映射
+            if symbol and alpha_id:
+                mapping[symbol] = alpha_id
+            # 其次使用symbol -> baseAsset映射
+            elif symbol and base_asset:
+                mapping[symbol] = base_asset
+
+        logger.info(f"从API获取了 {len(mapping)} 个代币映射")
+        return mapping
+
+    except Exception as e:
+        logger.error(f"从API获取代币映射失败: {e}")
+        return {}
 
 
 # 系统配置常量
@@ -133,10 +218,10 @@ class AutoTrader:
         )
 
         # 交易统计
-        self.total_traded_amount = 0.0  # 已交易总金额
+        self.total_traded_amount = Decimal('0')  # 已交易总金额
         self.trade_count = 0  # 交易次数
         # 历史订单统计
-        self.cumulative_buy_amount = 0.0  # 累计买入总额（从订单历史查询）
+        self.cumulative_buy_amount = Decimal('0')  # 累计买入总额（从订单历史查询）
         self.remaining_cycles = 0  # 剩余循环次数
         # 交易状态跟踪
         self.current_trading_state = "idle"  # idle, buying, selling
@@ -249,17 +334,19 @@ class AutoTrader:
             )
 
             # 检查是否已达标
-            if self.cumulative_buy_amount >= self.target_total_amount:
+            target_amount = Decimal(str(self.target_total_amount))
+            if self.cumulative_buy_amount >= target_amount:
                 logger.info(
-                    f"用户{self.user_id}已达标，累计买入{self.cumulative_buy_amount:.2f} >= 目标{self.target_total_amount:.2f}，不启动交易"
+                    f"用户{self.user_id}已达标，累计买入{self.cumulative_buy_amount:.2f} >= 目标{target_amount:.2f}，不启动交易"
                 )
                 return False
 
             # 计算剩余需要买入的金额
-            remaining_amount = self.target_total_amount - self.cumulative_buy_amount
+            remaining_amount = target_amount - self.cumulative_buy_amount
 
             # 计算循环次数
-            self.remaining_cycles = max(1, int(remaining_amount / self.buy_amount))
+            buy_amount_decimal = Decimal(str(self.buy_amount))
+            self.remaining_cycles = max(1, int(remaining_amount / buy_amount_decimal))
 
             logger.info(
                 f"用户{self.user_id}需要继续交易，剩余金额: {remaining_amount:.2f} USDT"
@@ -294,15 +381,17 @@ class AutoTrader:
                 f"用户{self.user_id}当前累计买入总额: {current_cumulative:.2f} USDT"
             )
 
-            if current_cumulative >= self.target_total_amount:
+            target_amount = Decimal(str(self.target_total_amount))
+            if current_cumulative >= target_amount:
                 logger.info(
-                    f"用户{self.user_id}已达标！累计买入{current_cumulative:.2f} >= 目标{self.target_total_amount:.2f}"
+                    f"用户{self.user_id}已达标！累计买入{current_cumulative:.2f} >= 目标{target_amount:.2f}"
                 )
                 return True
 
             # 更新剩余循环次数
-            remaining_amount = self.target_total_amount - current_cumulative
-            self.remaining_cycles = max(1, int(remaining_amount / self.buy_amount))
+            remaining_amount = target_amount - current_cumulative
+            buy_amount_decimal = Decimal(str(self.buy_amount))
+            self.remaining_cycles = max(1, int(remaining_amount / buy_amount_decimal))
 
             logger.info(
                 f"用户{self.user_id}未达标，剩余金额: {remaining_amount:.2f} USDT，继续{self.remaining_cycles}次循环"
@@ -856,9 +945,7 @@ class AutoTrader:
                         self.current_order_id = None
 
                         # 更新交易统计
-                        self.total_traded_amount += float(
-                            sell_quantity * Decimal(str(sell_price))
-                        )
+                        self.total_traded_amount += sell_quantity * Decimal(str(sell_price))
                         self.trade_count += 1
                         if self.target_total_amount:
                             self.remaining_cycles -= 1  # 减少剩余循环次数
@@ -1293,16 +1380,16 @@ async def log_final_status(traders: list, start_time: float):
     logger.info("=" * 60)
 
 
-async def get_user_cumulative_buy_amount(api: AlphaAPI, token_symbol: str) -> float:
+async def get_user_cumulative_buy_amount(api: AlphaAPI, token_symbol: str) -> Decimal:
     """
-    查询用户指定代币的累计买入总额（USDT）- 使用8点分界的时间范围
+    查询用户指定代币的累计买入总额（USDT）- 使用8点分界的时间范围，使用Decimal精确计算
 
     Args:
         api: API客户端
         token_symbol: 代币符号，如 "CROSS"
 
     Returns:
-        累计买入总额（USDT）
+        累计买入总额（USDT），使用Decimal类型确保精度
     """
     try:
         # 获取时间范围（以8点为分界的24小时）
@@ -1313,36 +1400,54 @@ async def get_user_cumulative_buy_amount(api: AlphaAPI, token_symbol: str) -> fl
         end_dt = datetime.fromtimestamp(end_time / 1000)
         logger.info(f"查询{token_symbol}累计买入总额，时间范围: {start_dt} ~ {end_dt}")
 
-        # 根据代币符号映射到base_asset
-        token_mapping = {
-            "CROSS": "ALPHA_259",
-            "MPLX": "ALPHA_XXX",  # 需要根据实际情况填写
-            "BR": "ALPHA_XXX",  # 需要根据实际情况填写
-            # 可以添加更多代币映射
-        }
+        # 优先从本地文件加载代币映射
+        token_mapping = load_local_token_mapping()
+
+        # 如果本地映射为空，尝试从API获取
+        if not token_mapping:
+            logger.warning("本地代币映射为空，尝试从API获取")
+            try:
+                token_mapping = await fetch_token_mapping_from_api(api)
+            except Exception as e:
+                logger.error(f"从API获取代币映射失败: {e}")
+
+        # 如果API也失败，使用硬编码的后备映射
+        if not token_mapping:
+            logger.warning("API获取代币映射失败，使用硬编码后备映射")
+            token_mapping = {
+                "CROSS": "ALPHA_259",
+                "MPLX": "ALPHA_285",  # 根据实际情况更新
+                "BR": "ALPHA_XXX",    # 需要根据实际情况填写
+            }
 
         base_asset = token_mapping.get(token_symbol)
         if not base_asset:
-            logger.error(f"不支持的代币符号: {token_symbol}")
-            return 0.0
+            logger.error(f"未找到代币符号映射: {token_symbol}，跳过用户")
+            return Decimal('0')
+
+        logger.info(f"代币映射: {token_symbol} -> {base_asset}")
 
         # 查询买入订单（支持多页合并）
         buy_orders = await fetch_all_orders(
             api, base_asset, "BUY", start_time, end_time
         )
 
-        total_buy_amount = 0.0
+        total_buy_amount = Decimal('0')
         buy_count = 0
 
         for order in buy_orders:
             # 只统计已完成的买入订单
             if order.get("orderStatus") == "FILLED" or order.get("status") == "FILLED":
-                # 计算买入金额 = 价格 × 数量
-                price = float(order.get("avgPrice", 0))
-                filled_qty = float(order.get("executedQty", 0))
-                buy_amount = price * filled_qty
-                total_buy_amount += buy_amount
-                buy_count += 1
+                try:
+                    # 使用Decimal进行精确计算
+                    price = Decimal(str(order.get("avgPrice", 0)))
+                    filled_qty = Decimal(str(order.get("executedQty", 0)))
+                    buy_amount = price * filled_qty
+                    total_buy_amount += buy_amount
+                    buy_count += 1
+                except (ValueError, TypeError) as e:
+                    logger.warning(f"订单数据转换失败，跳过: {e}")
+                    continue
 
         logger.info(
             f"查询到{token_symbol}累计买入: {buy_count}笔订单, 总额: {total_buy_amount:.2f} USDT"
@@ -1351,7 +1456,7 @@ async def get_user_cumulative_buy_amount(api: AlphaAPI, token_symbol: str) -> fl
 
     except Exception as e:
         logger.error(f"查询累计买入总额失败: {e}")
-        return 0.0
+        return Decimal('0')
 
 
 async def get_token_order_history_by_time_range(
@@ -1579,21 +1684,28 @@ async def main():
 
         # 查询累计买入总额
         if target_total_amount:
-            cumulative_amount = await get_user_cumulative_buy_amount(api, token_symbol)
-            logger.info(
-                f"用户{user_id}: 累计买入 {cumulative_amount:.2f} USDT / 目标 {target_total_amount:.2f} USDT"
-            )
+            try:
+                cumulative_amount = await get_user_cumulative_buy_amount(api, token_symbol)
+                target_amount_decimal = Decimal(str(target_total_amount))
 
-            if cumulative_amount >= target_total_amount:
-                logger.info(f"用户{user_id}已达标，跳过启动")
+                logger.info(
+                    f"用户{user_id}: 累计买入 {cumulative_amount:.2f} USDT / 目标 {target_amount_decimal:.2f} USDT"
+                )
+
+                if cumulative_amount >= target_amount_decimal:
+                    logger.info(f"用户{user_id}已达标，跳过启动")
+                    continue
+
+                # 计算剩余需要买入的金额和循环次数
+                remaining_amount = target_amount_decimal - cumulative_amount
+                buy_amount_decimal = Decimal(str(buy_amount))
+                remaining_cycles = max(1, int(remaining_amount / buy_amount_decimal))
+                logger.info(
+                    f"用户{user_id}需要继续交易，剩余金额: {remaining_amount:.2f} USDT，预计循环: {remaining_cycles}次"
+                )
+            except Exception as e:
+                logger.error(f"用户{user_id}查询累计买入总额失败: {e}，跳过该用户")
                 continue
-
-            # 计算剩余需要买入的金额和循环次数
-            remaining_amount = target_total_amount - cumulative_amount
-            remaining_cycles = max(1, int(remaining_amount / buy_amount))
-            logger.info(
-                f"用户{user_id}需要继续交易，剩余金额: {remaining_amount:.2f} USDT，预计循环: {remaining_cycles}次"
-            )
         else:
             logger.info(f"用户{user_id}未设置目标总金额，使用无限循环模式")
 

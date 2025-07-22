@@ -82,10 +82,10 @@ class TradingDataProcessor:
     """交易数据处理器"""
 
     def __init__(self, buffer_size: int = 1000):
-        self._price_buffer = deque(maxlen=buffer_size)
-        self._volume_buffer = deque(maxlen=buffer_size)
-        self._timestamp_buffer = deque(maxlen=buffer_size)
-        self._last_update = 0
+        self._price_buffer: deque[float] = deque(maxlen=buffer_size)
+        self._volume_buffer: deque[float] = deque(maxlen=buffer_size)
+        self._timestamp_buffer: deque[float] = deque(maxlen=buffer_size)
+        self._last_update: float = 0
 
     def add_price_data(
         self, price: float, volume: float = 0, timestamp: float | None = None
@@ -191,9 +191,9 @@ class OptimizedTradingAPI:
 
     async def get_trading_data_batch(self, token_symbol: str) -> dict[str, Any]:
         """批量获取交易相关数据"""
-        tasks = [
+        tasks: list[tuple[str, Any, tuple, dict]] = [
             ("balance", self.api.get_wallet_balance, (), {}),
-            ("token_info", self.api.get_token_info, (token_symbol,), {}),
+            ("token_info", self.api.get_token_list, (), {}),  # 修正方法名
         ]
 
         result = await self._fetcher.fetch_batch(tasks)
@@ -263,9 +263,9 @@ class TradingPerformanceMonitor:
     """交易性能监控器"""
 
     def __init__(self):
-        self._api_call_times = deque(maxlen=100)
-        self._order_execution_times = deque(maxlen=50)
-        self._websocket_latencies = deque(maxlen=100)
+        self._api_call_times: deque[float] = deque(maxlen=100)
+        self._order_execution_times: deque[float] = deque(maxlen=50)
+        self._websocket_latencies: deque[float] = deque(maxlen=100)
         self._error_counts = {"api": 0, "websocket": 0, "order": 0}
 
     def record_api_call(self, duration: float):

@@ -14,8 +14,8 @@ class BinanceWebSocket:
         self._running = False
         self._order_ws = None
         self._price_ws = None
-        self.order_queue = asyncio.Queue()
-        self.price_queue = asyncio.Queue()
+        self.order_queue: asyncio.Queue = asyncio.Queue()
+        self.price_queue: asyncio.Queue = asyncio.Queue()
         self._listen_key = None
         self._listen_key_task = None
         self._stop_event = asyncio.Event()
@@ -145,7 +145,8 @@ class BinanceWebSocket:
                 }
             )
             await ws.send(sub_msg)
-            print(f"已订阅订单推送: alpha@{self._listen_key[:20]}...")
+            listen_key_preview = self._listen_key[:20] if self._listen_key else "None"
+            print(f"已订阅订单推送: alpha@{listen_key_preview}...")
 
             # 重置重连计数
             self._reconnect_attempts = 0

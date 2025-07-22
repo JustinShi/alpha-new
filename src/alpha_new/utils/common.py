@@ -26,10 +26,7 @@ def decode_dict(d: dict[Any, Any] | None) -> dict[str, str]:
     result = {}
     for k, v in d.items():
         # 转换key
-        if isinstance(k, bytes):
-            key = k.decode("utf-8")
-        else:
-            key = str(k)
+        key = k.decode("utf-8") if isinstance(k, bytes) else str(k)
 
         # 转换value
         if isinstance(v, bytes):

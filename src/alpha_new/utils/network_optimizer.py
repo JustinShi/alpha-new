@@ -10,13 +10,7 @@ from datetime import datetime
 import time
 from typing import Any
 
-try:
-    from typing import Dict, List
-except ImportError:
-    # Python 3.8 兼容性
-    Dict = dict
-    List = list
-
+# 使用现代类型注解
 import httpx
 from rich.console import Console
 
@@ -71,7 +65,7 @@ class DynamicLatencyOptimizer:
 
     def __init__(self, config: LatencyConfig | None = None):
         self.config = config or LatencyConfig()
-        self.latency_history: Dict[str, deque] = {}
+        self.latency_history: dict[str, deque] = {}
         self.optimal_advance_ms = self.config.default_advance_ms
         self.last_test_time = 0
         self.is_monitoring = False
@@ -90,8 +84,8 @@ class DynamicLatencyOptimizer:
         self,
         url: str,
         method: str = "GET",
-        headers: Dict[str, str] | None = None,
-        data: Dict[str, Any] | None = None,
+        headers: dict[str, str] | None = None,
+        data: dict[str, Any] | None = None,
         timeout: float = 30.0,
     ) -> LatencyResult:
         """测量单次网络延迟"""
@@ -132,7 +126,7 @@ class DynamicLatencyOptimizer:
                 error=str(e),
             )
 
-    async def auto_tune_advance_ms(self, headers: Dict[str, str] | None = None) -> int:
+    async def auto_tune_advance_ms(self, headers: dict[str, str] | None = None) -> int:
         """基于历史数据自动调优提前时间"""
         logger.info("🔧 开始自动调优网络延迟参数...")
 
@@ -145,7 +139,7 @@ class DynamicLatencyOptimizer:
                 # 执行延迟测试
                 for i in range(5):  # 测试5次
                     result = await self.measure_latency(
-                        url=endpoint["url"], method=endpoint["method"], headers=headers
+                        url=str(endpoint["url"]), method=str(endpoint["method"]), headers=headers
                     )
                     if result.success:
                         results.append(result.latency)
@@ -169,7 +163,7 @@ class DynamicLatencyOptimizer:
         logger.info(f"✅ 自动调优完成，最优提前时间: {self.optimal_advance_ms}ms")
         return self.optimal_advance_ms
 
-    async def start_background_monitoring(self, headers: Dict[str, str] | None = None):
+    async def start_background_monitoring(self, headers: dict[str, str] | None = None):
         """启动后台延迟监控"""
         if self.is_monitoring:
             logger.warning("⚠️ 后台监控已在运行")
@@ -186,7 +180,7 @@ class DynamicLatencyOptimizer:
         self.is_monitoring = False
         logger.info("⏹️ 停止后台网络延迟监控")
 
-    def get_optimization_report(self) -> Dict[str, Any]:
+    def get_optimization_report(self) -> dict[str, Any]:
         """生成优化报告"""
         return {
             "status": "success",
@@ -209,7 +203,7 @@ def get_latency_optimizer(
     return _global_optimizer
 
 
-async def optimize_network_latency(headers: Dict[str, str] | None = None) -> int:
+async def optimize_network_latency(headers: dict[str, str] | None = None) -> int:
     """便捷函数：优化网络延迟并返回最优提前时间"""
     optimizer = get_latency_optimizer()
     return await optimizer.auto_tune_advance_ms(headers)

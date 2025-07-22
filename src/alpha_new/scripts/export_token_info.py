@@ -57,11 +57,10 @@ async def get_token_info(api: AlphaAPI) -> dict:
                 f"[用户{api.user_id}] 代币信息查询成功，找到 {len(tokens)} 个代币"
             )
             return result
-        else:
-            # API返回错误
-            error_msg = response.get("message", "未知错误")
-            logger.error(f"[用户{api.user_id}] API返回错误: {error_msg}")
-            raise Exception(f"API返回错误: {error_msg}")
+        # API返回错误
+        error_msg = response.get("message", "未知错误")
+        logger.error(f"[用户{api.user_id}] API返回错误: {error_msg}")
+        raise Exception(f"API返回错误: {error_msg}")
 
     except Exception as e:
         logger.error(f"[用户{api.user_id}] 代币信息查询失败: {e}")
@@ -83,8 +82,8 @@ async def main(user_id: int) -> None:
                 return
 
             # 解码用户认证信息
-            headers = decode_dict(user.headers) if user.headers is not None else {}
-            cookies = decode_dict(user.cookies) if user.cookies is not None else None
+            headers = decode_dict(user.headers) if user.headers is not None else {}  # type: ignore
+            cookies = decode_dict(user.cookies) if user.cookies is not None else None  # type: ignore
 
             # 创建API实例
             api = AlphaAPI(headers=headers, cookies=cookies, user_id=user_id)
@@ -110,9 +109,6 @@ async def main(user_id: int) -> None:
 if __name__ == "__main__":
     import sys
 
-    if len(sys.argv) > 1:
-        user_id = int(sys.argv[1])
-    else:
-        user_id = 1  # 默认用户ID
+    user_id = int(sys.argv[1]) if len(sys.argv) > 1 else 1  # 默认用户ID
 
     asyncio.run(main(user_id))

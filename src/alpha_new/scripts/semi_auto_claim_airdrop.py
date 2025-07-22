@@ -279,8 +279,7 @@ async def claim_for_user(
                 ):
                     logger.info(f"✅ 用户{user_id}领取请求成功，停止重试")
                     break
-                else:
-                    logger.warning(f"⚠️ 用户{user_id}领取请求未成功，准备重试")
+                logger.warning(f"⚠️ 用户{user_id}领取请求未成功，准备重试")
             except Exception as e:
                 logger.error(
                     f"❌ 用户{user_id}领取请求异常 (尝试 {attempt}/{retry_times}): {e}"

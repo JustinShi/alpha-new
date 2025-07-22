@@ -72,11 +72,10 @@ async def main(user_id: int) -> None:
                 if attempt == max_retries:
                     logger.error("所有重试都失败了，请检查网络连接或用户认证信息")
                     raise
-                else:
-                    logger.info("等待2秒后重试...")
-                    import asyncio
+                logger.info("等待2秒后重试...")
+                import asyncio
 
-                    await asyncio.sleep(2)
+                await asyncio.sleep(2)
 
 
 if __name__ == "__main__":

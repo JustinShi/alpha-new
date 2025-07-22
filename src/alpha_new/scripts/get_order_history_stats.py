@@ -193,7 +193,7 @@ async def get_user_order_stats(
             avg_price = float(order.get("avgPrice", 0))
             amount = qty * avg_price
             if symbol not in stats:
-                stats[symbol] = {"buy": 0, "sell": 0}
+                stats[symbol] = {"buy": 0.0, "sell": 0.0}
             if side == "BUY":
                 stats[symbol]["buy"] += amount
             elif side == "SELL":
@@ -215,7 +215,7 @@ async def main():
     async with async_session() as session:
         all_users = await get_all_user_ids(session)
         valid_users = await get_valid_users(session)
-        user_ids = [user.id for user in valid_users]
+        user_ids: list[int] = [user.id for user in valid_users]  # type: ignore
 
     logger.info(f"总用户数: {len(all_users)}, 有效用户数: {len(user_ids)}")
     logger.info(f"有效用户ID: {user_ids}")
@@ -225,7 +225,7 @@ async def main():
         # 显示所有用户的状态
         async with async_session() as session:
             for user_id in all_users:
-                user = await get_user_by_id(session, user_id)
+                user = await get_user_by_id(session, user_id)  # type: ignore
                 if user:
                     console.print(
                         f"用户{user_id}: {user.name} - 状态: {user.login_status}"
@@ -236,14 +236,15 @@ async def main():
     symbol_map = load_symbol_map_from_file()
     if not symbol_map and user_ids:
         async with async_session() as session:
-            user = await get_user_by_id(session, user_ids[0])
+            first_user_id = user_ids[0]
+            user = await get_user_by_id(session, first_user_id)  # type: ignore
             headers = (
                 decode_dict(user.headers) if user and user.headers is not None else {}
             )
             cookies = (
                 decode_dict(user.cookies) if user and user.cookies is not None else None
             )
-            api = AlphaAPI(headers=headers, cookies=cookies, user_id=user_ids[0])
+            api = AlphaAPI(headers=headers, cookies=cookies, user_id=first_user_id)
             symbol_map = await fetch_token_symbol_map(api)
 
     # 简化时间范围选择，直接使用今天8点分界
@@ -258,7 +259,7 @@ async def main():
     # 查询所有用户订单
     console.print(f"🔍 正在查询 {len(user_ids)} 个用户的订单历史...")
     tasks = [
-        get_user_order_stats(uid, engine, symbol_map, start_ms, end_ms)
+        get_user_order_stats(uid, engine, symbol_map, start_ms, end_ms)  # type: ignore
         for uid in user_ids
     ]
     results = await asyncio.gather(*tasks)
@@ -277,18 +278,19 @@ async def main():
 
     has_data = False
     for idx, res in enumerate(results):
-        user_id = str(res["user_id"])
+        user_id_val = res["user_id"]
+        user_id_str = str(user_id_val)
         stats = res.get("stats", {})
 
         if not stats:
-            table.add_row(user_id, "无交易记录", "0.00", "0.00", "0.00")
+            table.add_row(user_id_str, "无交易记录", "0.00", "0.00", "0.00")
             continue
 
         has_data = True
         first = True
         for symbol, s in stats.items():
             table.add_row(
-                user_id if first else "",
+                user_id_str if first else "",
                 symbol,
                 f"{s['buy']:.4f}",
                 f"{s['sell']:.4f}",

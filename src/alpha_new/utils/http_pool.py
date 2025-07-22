@@ -169,10 +169,7 @@ class HTTPConnectionPool:
 
         # 如果客户端创建时间过长，需要重建
         created_at = health_info.get("created_at", 0)
-        if time.time() - created_at > 3600:  # 1小时
-            return True
-
-        return False
+        return time.time() - created_at > 3600  # 1小时
 
     async def _close_client_internal(self, client_id: str):
         """内部关闭客户端方法"""

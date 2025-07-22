@@ -3,11 +3,6 @@ from datetime import datetime
 import logging
 import os
 
-# 在导入任何其他模块之前设置SQLAlchemy日志级别
-logging.getLogger("sqlalchemy.engine").setLevel(logging.CRITICAL)
-logging.getLogger("sqlalchemy.pool").setLevel(logging.CRITICAL)
-logging.getLogger("sqlalchemy.dialects").setLevel(logging.CRITICAL)
-
 from rich.console import Console
 from rich.panel import Panel
 from rich.prompt import Prompt
@@ -24,6 +19,11 @@ from alpha_new.utils.user_session_manager import (
     get_random_valid_user,
     get_user_cache_info,
 )
+
+# 在导入任何其他模块之后设置SQLAlchemy日志级别
+logging.getLogger("sqlalchemy.engine").setLevel(logging.CRITICAL)
+logging.getLogger("sqlalchemy.pool").setLevel(logging.CRITICAL)
+logging.getLogger("sqlalchemy.dialects").setLevel(logging.CRITICAL)
 
 logger = get_cli_logger()
 
@@ -256,7 +256,6 @@ def main():
                     )
 
                     asyncio.run(export_token_info_main(user_id))
-                    from rich.table import Table
 
                     try:
                         with open("data/token_info.json", encoding="utf-8") as f:
@@ -270,13 +269,13 @@ def main():
                         )
 
                         # 统计不同链的代币数量
-                        chain_stats = {}
+                        chain_stats: dict[str, int] = {}
                         for token in tokens:
                             chain = token.get("chainName", "Unknown")
                             chain_stats[chain] = chain_stats.get(chain, 0) + 1
 
                         # 显示统计信息而不是详细列表
-                        console.print(f"[green]📊 代币信息统计:[/green]")
+                        console.print("[green]📊 代币信息统计:[/green]")
                         console.print(f"[dim]总代币数量: {len(tokens)}[/dim]")
                         console.print(f"[dim]支持的区块链: {len(chain_stats)}个[/dim]")
 
@@ -288,7 +287,7 @@ def main():
                         if len(sorted_chains) > 5:
                             console.print(f"[dim]  ... 还有{len(sorted_chains) - 5}个其他链[/dim]")
 
-                        console.print(f"[dim]详细信息已保存到: data/token_info.json[/dim]")
+                        console.print("[dim]详细信息已保存到: data/token_info.json[/dim]")
 
                     except Exception as e:
                         console.print(f"[red]读取代币信息失败: {e}[/red]")
